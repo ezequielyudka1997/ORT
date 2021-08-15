@@ -47,7 +47,7 @@
 		*merge m:m pais using "$ruta\scimagojr country rank 2018.dta"
 		*drop _merge
 		*Se crea la variable average que tiene el promedio de documentos por país
-		*en el periodo
+		*en el periodo 
 		*egen documentos_promedio=rowmean(anio_2014-anio_2018)
 		*drop anio_*
 		*save "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\scimagojr.dta"
