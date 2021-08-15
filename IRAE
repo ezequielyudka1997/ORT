@@ -1,0 +1,293 @@
+drop _all
+cd "C:\Users\zequi\Desktop\ORT\IRAE\base_IRAE_IEcon"
+
+/*
+Existen tres formularios en DGI:
+	-Formulario 1006: Empresas agropecuarias
+	-Formulario 2148: Empresas NO CEDE
+	-Formulario 2149: Empresas CEDE
+*/
+
+****Esto se corre una única vez****
+		/*Se cambia el formato de las bases a wide. Se corre una sola vez
+		foreach anio in "2009" "2010" "2011" "2012" "2013" "2014" "2015" "2016" "2017"{
+		use "IECON 1006_2148_2149_ano_`anio'.dta", clear
+		reshape wide  importe, i(identificador cod_formulario) j (nro_de_linea)
+		gen nii_ruc_muestra=identificador
+		save "IECON 1006_2148_2149_reshape_`anio'.dta", replace
+		}
+		*/
+
+
+**** Formularios 2148-2149 ****
+		****Ver lineas repetidas, pueden pasar de ser un formulario 2148 a 2149***
+		** En general esto pasa cuando cambian de catergorìa en el año (CEDE a NO CEDE) ****
+		/*
+		set more off
+		foreach anio in "2009" "2010" "2011" "2012" "2013" "2014" "2015" "2016" "2017"{
+		use "IECON 1006_2148_2149_reshape_`anio'.dta", clear
+		duplicates tag identificador, gen(dobles)
+
+		gen form_2148=0	
+		replace form_2148=1 if cod_formulario==2148
+		egen max_form_2148=max(form_2148), by(identificador)
+
+		gen form_2149=0
+		replace form_2149=1 if cod_formulario==2149
+		egen max_form_2149=max(form_2149), by(identificador)
+		gen dobles_48_49=1 if dobles==1 & max_form_2149==1 & max_form_2148==1
+
+		preserve
+		keep if dobles_48_49==1
+		unab varlist : _all
+		unab exclude : identificador
+		local vars : list varlist - exclude
+		collapse (max) `vars'  , by(identificador)
+		save "IECON 1006_2148_2149_reshape_`anio'_48_49.dta",replace
+		restore
+
+		drop if dobles_48_49==1
+		drop if cod_formulario==1006
+		append using "IECON 1006_2148_2149_reshape_`anio'_48_49.dta"
+		save "IECON 2148_2149_reshape_`anio'_sdobles.dta", replace
+		}
+		*/
+		
+		foreach anio in "2009" "2010" "2011" "2012" "2013" "2014" "2015" "2016" "2017"{
+		use "IECON 2148_2149_reshape_`anio'_sdobles.dta", clear
+		set more off
+
+		gen resultado_neto=.
+		recode importe301 .=0
+		if cod_formulario==2148{
+		replace resultado_neto=importe114  if importe114!=.  
+		replace resultado_neto=importe115*(-1)  if importe115!=. & importe114==.
+		replace resultado_neto=importe155 + importe301 if importe155!=. & importe115==. & importe114==. 
+		replace resultado_neto=importe156*(-1) + importe301 if importe156!=. & importe115==. & importe155==. & importe114==. 
+
+				*replace resultado_neto=resultado_neto + importe301
+		}
+		****
+		mvencode importe*, mv(0) override
+
+		*gen contabilidad_suficiente=0*
+		*replace contabilidad_suficiente=1 if importe4==1*
+		gen decl_real=0
+		replace decl_real=1 if importe5==1
+		****** CATEGORIAS DE ACTIVO ****
+		****Definición comparable con bases anteriores (CS/Leticia Olmos) ***
+				*gen activo_contable=importe13 //Se puede usar alternativamente importe59 + importe64
+		**** Otras definiciones de activo *****
+		*gen activo_fiscal=importe21 //Se puede usar alternativamente activo_contable + importe19 - importe20
+		*gen activo_gravado=importe25 // Se puede usar alternativamente activo_fiscal - importe46 - importe24 - importe45 - importe22
+		rename importe100 producto
+		rename importe64 capital
+		rename importe59 activo_corriente 
+		rename importe13 activo
+				/*
+				replace activo_corriente = (importe8+importe51+importe52+importe53+importe54+importe55+importe56+importe57+importe58) if identificador==44690648
+				gen revisar= capital-(activo_nocorriente+activo_corriente)
+				replace activo_nocorriente= (importe64/2) if revisar!=0
+				replace capital = (activo_corriente+ activo_nocorriente) if revisar!=0
+				drop revisar
+				*/
+		gen trabajo = importe178 + importe179 + importe195 + importe196
+		gen energia = importe166 + importe167
+		gen materiales = importe177 - importe195 - importe196
+		gen servicios = importe176 - importe178 - importe179 -importe166 - importe167 - importe173 - importe174 -importe168
+		****** CATEGORIAS DE PASIVO ****
+		rename importe30 pasivo
+		****Definición comparable con bases anteriores (CS/Leticia Olmos) ***
+		*gen pasivo_contable=importe30 //Se puede usar alternativamente importe74 + importe78
+		**** Otras definiciones de pasivo *****
+		*gen pasivo_fiscal=importe39 //Se puede usar alternativamente pasivo_contable - importe36 + importe37
+		rename importe74 pasivo_corriente
+		rename importe78 pasivo_nocorriente 
+		****** CATEGORIAS DE PATRIMONIO ****
+		****Definición comparable con bases anteriores (CS/Leticia Olmos) ***
+		gen patrimonio_contable=importe79 - importe80 //activo_contable - pasivo_contable
+		**** Otras definiciones de patrimonio *****
+		*gen patrimonio_fiscal=importe40 - importe41 //Se puede usar alternativamente activo_fiscal - pasivo_deducible
+		****** IMPUESTOS ****
+		gen irae_iecon=importe301
+		gen imp_patrimonio=importe305
+
+		****** INGRESOS/COSTOS ****
+		*gen ingresos_operativos=importe100 //Se puede usar alternativamente importe160 + importe161 + importe162
+		*gen ventas=importe160 + importe161
+
+		*gen costos_gastos=importe177 + importe176
+		*gen otros_ingr=importe184 - importe185
+		*gen ajustes=importe136 - importe137
+
+		****** RESULTADOS ****
+		*gen resultado_financiero=importe108 - importe109
+
+		****Resultado neto se corresponderia a la variable res_cont ***
+		*replace resultado_neto=importe114 - importe115 if cod_formulario==2149 //Se puede usar alternativamente ingresos_operativos - costos_gastos + otros_ingr + resultado_financiero
+
+		*gen resultado_fiscal=importe155 - importe156 // resultado_neto + ajustes + importe141 + importe251 + importe250 - importe144 - importe158 + importe147 - importe148 - importe151 - importe154
+		******Remuneraciones*****
+		*gen remuneraciones=importe104 + importe178 + importe195
+		*gen remunera_socios=importe291 + importe70 //Imputados y cuentas de socios
+		*gen utilidades_diferidas=importe147 - importe148
+
+		gen anio=`anio'
+		
+		/*
+		**** Rentas fictas *****
+		if anio==2009 | anio==2010 | anio==2011 | anio==2012 | anio==2013 {
+		gen renta_bruta=importe290 // Suma rentas fictas de trabajo y capital (lineas 280 a 286)
+		gen otras_rentas_fictas=importe250 + importe251 + importe260 + importe261 + importe262 + importe263 + importe264 + importe265 + importe266
+		} 
+		if anio==2014 {
+		gen renta_bruta=importe290 // Suma rentas fictas de trabajo y capital (lineas 280 a 289, incorpora lineas 287,288 y 289 que son rentas fictas por tramo (cambio de legislación, tasas diferentes por tramos de rentas fictas)
+		gen otras_rentas_fictas=importe250 + importe251 + importe260 + importe261 + importe262 + importe263 + importe264 + importe265 + importe266 + importe267 + importe268 + importe269 + importe270 + importe271 //incluye mas importes
+		}
+		if anio==2015 | anio==2016 | anio==2017 {
+		gen renta_bruta=importe290 // Suma rentas fictas de trabajo y capital (lineas 280 a 289, incorpora lineas 287,288 y 289 que son rentas fictas por tramo (cambio de legislación, tasas diferentes por tramos de rentas fictas)
+		gen otras_rentas_fictas=importe250 + importe251 + importe260 + importe261 + importe262 + importe266 + importe267 + importe268 + importe269 + importe270 + importe271 //incluye mas importes
+		}
+	
+		****
+		if  anio==2015 | anio==2016 | anio==2017 {
+		keep identificador nii_ruc_muestra anio cod_formulario  activo_contable activo_fiscal activo_gravado pasivo_contable pasivo_fiscal patrimonio_contable patrimonio_fiscal irae_iecon imp_patrimonio ingresos_operativos ventas costos_gastos otros_ingr ajustes resultado_financiero resultado_neto resultado_fiscal remuneraciones remunera_socios contabilidad_suficiente decl_real utilidades_diferidas renta_bruta otras_rentas_fictas  importe198 importe266 importe270 importe260  importe261  importe262 importe114 importe115 importe156 importe155 importe199 importe280 importe281 importe282 importe250 importe267 importe268 importe269  importe287 importe288 importe289 importe160 importe161 importe162 importe290   importe291  importe292 activo_corriente activo_nocorriente pasivo_corriente pasivo_nocorriente
+		save "Formularios_2148_2149_`anio'.dta", replace
+		}
+		if anio==2014 {
+		keep identificador nii_ruc_muestra anio cod_formulario  activo_contable activo_fiscal activo_gravado pasivo_contable pasivo_fiscal patrimonio_contable patrimonio_fiscal irae_iecon imp_patrimonio ingresos_operativos ventas costos_gastos otros_ingr ajustes resultado_financiero resultado_neto resultado_fiscal remuneraciones remunera_socios contabilidad_suficiente decl_real utilidades_diferidas renta_bruta otras_rentas_fictas  importe198 importe266 importe270 importe260  importe261  importe262 importe114 importe115 importe156 importe155 importe199 importe280 importe281 importe282 importe250 importe267 importe268 importe269  importe287 importe288 importe289 importe160 importe161 importe162 importe290   importe291  importe292 importe263 activo_corriente activo_nocorriente pasivo_corriente pasivo_nocorriente
+		save "Formularios_2148_2149_`anio'.dta", replace
+		}
+		if anio==2009 | anio==2010 | anio==2011 | anio==2012 | anio==2013 {
+		****
+		keep identificador nii_ruc_muestra anio cod_formulario  activo_contable activo_fiscal activo_gravado pasivo_contable pasivo_fiscal patrimonio_contable patrimonio_fiscal irae_iecon imp_patrimonio ingresos_operativos ventas  costos_gastos otros_ingr ajustes resultado_financiero resultado_neto resultado_fiscal remuneraciones remunera_socios contabilidad_suficiente decl_real utilidades_diferidas renta_bruta otras_rentas_fictas  importe198 importe266 importe260  importe261  importe262 importe114 importe115 importe156 importe155 importe199 importe280 importe281 importe282 importe250  importe160 importe161 importe162 activo_corriente activo_nocorriente pasivo_corriente pasivo_nocorriente
+		save "Formularios_2148_2149_`anio'.dta", replace
+		}
+		*/
+		keep identificador  anio cod_formulario  activo pasivo pasivo_corriente pasivo_nocorriente capital activo_corriente patrimonio_contable irae_iecon imp_patrimonio resultado_neto  decl_real  trabajo energia materiales servicios producto 
+
+		save "Formularios_2148_2149_`anio'.dta", replace
+		}
+		****
+		/*No se usa al final
+			*Cambio de ORT*
+				foreach anio in "2009" "2010" "2011" "2012" "2013" "2014" "2015" "2016" "2017"{
+				use "IECON 2148_2149_reshape_`anio'_sdobles.dta", clear 
+				drop dobles
+				save "ORT 2148_2149_reshape_anio_`anio'_sdobles.dta", replace
+				}
+		*/
+			
+**** Formulario 1006 ******
+		set more off
+		foreach anio in "2009" "2010" "2011" "2012" "2013" "2014" "2015" "2016" "2017"{
+		use "IECON 1006_2148_2149_reshape_`anio'.dta", clear
+		duplicates tag identificador, gen(dobles)
+		keep if cod_formulario==1006
+
+		set more off
+		mvencode importe*, mv(0) override
+		
+		*gen contabilidad_suficiente=0
+		*replace contabilidad_suficiente=1 if importe4==1
+		gen decl_real=0
+		replace decl_real=1 if importe5==1
+
+		****** CATEGORIAS DE ACTIVO ****
+		gen  capital= (importe12 + importe13 + importe14 + importe15)
+		gen activo_corriente = (importe10 + importe11+ importe16)
+		rename importe17 activo
+		gen trabajo = importe118 + importe120 + importe141 + importe124
+		gen energia = importe119 + importe140
+		gen materiales = importe135 + importe121 + importe190 + importe138 + importe136 + importe134 + importe132 + importe130
+		gen servicios = importe122 + importe126 + importe128 + importe123 + importe125 + importe127 + importe137 + importe169 + importe178 + importe139
+		gen producto = importe108 + importe160 + importe110 + importe109 + importe111 + importe161 + importe162 + importe163 + importe167 + importe112 + importe113 + importe164
+		****Definición comparable con bases anteriores (CS/Leticia Olmos) ***
+		*gen activo_contable=importe17 //Se puede usar alternativamente importe59 + importe64
+		**** Otras definiciones de activo *****
+		*gen activo_fiscal=. //Se puede usar alternativamente activo_contable + importe19 - importe20
+		*gen activo_gravado=importe19 // Se puede usar alternativamente activo_fiscal - importe46 - importe24 - importe45 - importe22
+		
+		****** CATEGORIAS DE PASIVO ****
+		rename importe23 pasivo
+		****Definición comparable con bases anteriores (CS/Leticia Olmos) ***
+		*gen pasivo_contable=importe23 //Se puede usar alternativamente importe74 + importe78
+		**** Otras definiciones de pasivo *****
+		*gen pasivo_fiscal=importe26 //Se puede usar alternativamente pasivo_contable - importe36 + importe37
+
+		****** CATEGORIAS DE PATRIMONIO ****
+		****Definición comparable con bases anteriores (CS/Leticia Olmos) ***
+		gen patrimonio_contable=. //activo_contable - pasivo_contable
+		**** Otras definiciones de patrimonio *****
+		*gen patrimonio_fiscal=importe27 - importe28 //Se puede usar alternativamente activo_fiscal - pasivo_deducible
+
+		****** IMPUESTOS ****
+		gen irae_iecon=importe340
+		gen imp_patrimonio=importe552
+
+		****** INGRESOS/COSTOS ****
+		*gen ingresos_operativos=. //Se puede usar alternativamente importe160 + importe161 + importe162
+		*gen ventas=importe100
+
+		*gen costos_gastos=.
+		*gen otros_ingr=.
+		*gen ajustes=importe175 - importe176
+
+		****** RESULTADOS ****
+		*gen resultado_financiero=.
+
+		****Resultado neto se corresponderia a la variable res_cont ***
+		gen resultado_neto=importe143 - importe144 //Se puede usar alternativamente ingresos_operativos - costos_gastos + otros_ingr + resultado_financiero
+		*gen resultado_fiscal=importe153 - importe154 //Se puede usar alternativamente 
+
+		******Remuneraciones*****
+		*gen remuneraciones=importe120
+		*gen remunera_socios=importe548 + importe118 //Imputados y sueldos
+
+		gen anio=`anio'
+		keep identificador  anio cod_formulario  activo pasivo  capital activo_corriente patrimonio_contable irae_iecon imp_patrimonio resultado_neto  decl_real  trabajo energia materiales servicios producto
+		save "Formularios_1006_`anio'.dta", replace
+		}
+
+		set more off
+		foreach anio in "2009" "2010" "2011" "2012" "2013" "2014" "2015" "2016" "2017" {
+		use "Formularios_2148_2149_`anio'.dta", clear
+		append using "Formularios_1006_`anio'.dta"
+		duplicates tag identificador, gen(dobles)
+
+		preserve
+		set more off
+		mvencode _all, mv(0) override
+		keep if dobles==1
+		unab varlist : _all
+		unab exclude : identificador  cod_formulario anio
+		local vars : list varlist - exclude
+		collapse (sum) `vars'  (max) anio cod_formulario, by(identificador)
+		save "Dobles_1006_2148_2149_`anio'.dta", replace
+		restore
+
+		drop if dobles==1
+		append using "Dobles_1006_2148_2149_`anio'.dta"
+		gen inconsistencias_activo=1 if ((activo_corriente + capital) != activo)
+		gen inconsistencias_pasivo=1 if ((pasivo_corriente + pasivo_nocorriente)!= pasivo) & (cod_formulario==2148 | cod_formulario==2149)
+		gen inconsistencias_patrimonio=1 if ((activo-pasivo)!= patrimonio_contable) & (cod_formulario==2148 | cod_formulario==2149)
+		save "Formularios_1006_2148_2149_`anio'.dta", replace		
+
+}
+
+/*Se unen las bases de todos los años y se guarda la base final. Se elimina la 
+empresa con identificador 41051624 porque tiene un valor atípico en 2012 en 
+la variable trabajo*/
+drop _all
+cd "C:\Users\zequi\Desktop\ORT\IRAE\base_IRAE_IEcon"
+		use "Formularios_1006_2148_2149_2009.dta", clear
+		append using "Formularios_1006_2148_2149_2010.dta"
+		append using "Formularios_1006_2148_2149_2011.dta"
+		append using "Formularios_1006_2148_2149_2012.dta"
+		append using "Formularios_1006_2148_2149_2013.dta"
+		append using "Formularios_1006_2148_2149_2014.dta"
+		append using "Formularios_1006_2148_2149_2015.dta"
+		append using "Formularios_1006_2148_2149_2016.dta"
+		append using "Formularios_1006_2148_2149_2017.dta"
+		drop if identificador==41051624
+		save "Formularios_1006_2148_2149_total.dta", replace		
