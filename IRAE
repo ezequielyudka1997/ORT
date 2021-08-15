@@ -30,7 +30,7 @@ Existen tres formularios en DGI:
 
 		gen form_2148=0	
 		replace form_2148=1 if cod_formulario==2148
-		egen max_form_2148=max(form_2148), by(identificador)
+		egen max_form_2148=max(form_2148), by(identificador) 
 
 		gen form_2149=0
 		replace form_2149=1 if cod_formulario==2149
