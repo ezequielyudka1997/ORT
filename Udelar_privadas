@@ -1,0 +1,423 @@
+/*Hay 2 vias para estudiar cuantos estudiantes de la Udelar podrían ir a una 
+Universidad Privada*/
+
+*-VÍA 1: Ver mediante los que tienen hermanos en el sistema privado*
+	********************************PESOANO*****************************************
+	********************************************************************************
+
+	drop _all
+	cd "C:\Users\zequi\Desktop\ORT\ECH\Bases Personas"
+	use "p2019_final", clear
+
+	rename *, lower
+	duplicates drop
+	
+			/*
+			/*Se hizo el analisis global y aparte uno particular en el que solo
+			se consideró a los personas cuyo vinculo con el/ la jefe/a de hoagr
+			es el de hijo/a de ambos(4),  hijo/a solo del jefe(5), hijo/a 
+			solo del esposo/a compañero/a*/
+			keep if e30==3 | e30==4 | e30==5
+			di(5234/26139)
+			di (175/26139)
+			
+				*Solo Montevideo*
+				di(3325/11498)
+				di(108/11498)
+			*/
+	
+	/*Desagregamos a las personas entre 18 y 20 años entre los que van a UdelaR, 
+	univerisdad privada y los que no asisten*/
+	gen udelar=1 if e218==1 & e219==1 & (e27>=18) & (e27<=20)
+	gen universidad_privada=1 if e218==1 & e219==2 & (e27>=18) & (e27<=20)
+	gen no_asiste=1 if udelar!=1 & universidad_privada!=1 & (e27>=18) & (e27<=20)
+	*Consideramos relevantes a las personas que cumplen algúno de los 3 criterios*
+	gen personas_relevantes=1 if udelar==1| universidad_privada==1 | no_asiste==1
+	*Consideramos un hogar relevante aquel en el que hay por lo menos una persona relevante*
+	sort numero
+	egen hogares_relevantes = max(personas_relevantes), by(numero) 
+	keep if hogares_relevantes ==1
+	
+	/*Dentro de los hogares relevantes tenemos algúnos en los que hay personas 
+	que concurren a UdelaR, otros a univerisdad privada y hay hogares donde hay ambas*/
+	egen hogares_univpriv = max(universidad_privada), by(numero) 
+	egen hogares_udelar = max(udelar), by(numero) 
+	gen hogares_mixtos=1 if hogares_udelar==1 & hogares_univpriv==1
+	replace hogares_univpriv=. if  hogares_mixtos==1
+	replace hogares_udelar=. if  hogares_mixtos==1
+
+	/*Desagregamos a las personas entre los que van a secundaria o primaria entre
+	pública y privada*/
+	gen primaria_publica=1 if e197==1 & e198==1
+	gen primaria_privada=1 if e197==1 & e198==2
+	gen basica_publica=1 if e201==1 & e210_1==1
+	gen basica_privada=1 if e201==1 & e210_1==2
+	gen bachillerato_publica=1 if e201==1 & e210_2==1
+	gen bachillerato_privada=1 if e201==1 & e210_2==2 	
+	
+	*Creamos una variable que diga si va al sistema privado*
+	gen individuoenprivado=1 if primaria_privada==1 
+	replace individuoenprivado=1 if basica_privada==1
+	replace individuoenprivado=1 if bachillerato_privada==1
+	/*La de abajo implica universidad privada pero no hay limite de edad (la 
+	variable universidad_privada está restringida al rango etario 18-20 años)*/
+	replace individuoenprivado=1 if e218==1 & e219==2  
+	
+	*Creamos una variable que diga si va al sistema publica*
+	gen individuoenpublica=1 if primaria_publica==1
+	replace individuoenpublica=1 if basica_publica==1
+	replace individuoenpublica=1 if bachillerato_publica==1
+	/*La de abajo implica Udelar pero no hay limite de edad (la variable Udelar 
+	está restringida al rango etario 18-20 años)*/
+	replace individuoenpublica=1 if e218==1 & e219==1
+	
+	
+	/*Creamos una variable para hogares con al menos un individuo en el sistema 
+	privado, otra para los hogares con al menos un individuo en el sistema público
+	y otra para los hogares mixtos que tienen hijos en ambos*/
+	egen hogarenprivado=max(individuoenprivado), by(numero)
+	egen hogarenpublica=max(individuoenpublica), by(numero)
+	gen hogarenmixto=1 if hogarenprivado==1 & hogarenpublica==1
+	replace hogarenprivado=. if hogarenmixto==1
+	replace hogarenpublica=. if hogarenmixto==1
+	
+	*Nos quedamos solo con los que van a udelar*
+	keep if udelar==1	
+	
+	gen persona=1
+	
+	tab hogarenprivado
+	
+	sum persona [fw=pesoano] if hogarenprivado==1
+	sum persona [fw=pesoano]
+	di(5632/30655)
+									
+	
+	sum persona [fw=pesoano] if hogares_mixtos==1
+	di(293/30655)
+		
+		*Para Montevideo*
+			/*Vemos los estudiantes de la UdelaR de Montevideo que tienen algún 
+			miembro del hogar en el sistema privado (primaria, ciclo básico, 
+			bachillerato, universidad*/
+			sum persona [fw=pesoano] if dpto==1
+			sum persona [fw=pesoano] if (hogarenprivado==1 | hogarenmixto==1) & dpto==1
+			di(3695/15054)
+			/*Vemos los estudiantes de la UdelaR de Montevideo que tienen a todos 
+			los miembro del hogar en el sistema público (primaria, ciclo básico, 
+			bachillerato, universidad*/
+			sum  persona [fw=pesoano] if (hogarenpublica==1) & dpto==1
+			di(11359/15054)
+
+			/*
+			/*Vemos los estudiantes de la UdelaR de Montevideo que tienen algún 
+			miembro del hogar en el sistema privado (primaria, ciclo básico, 
+			bachillerato, universidad*/
+			sum persona [fw=pesoano] if hogarudelarprivado==1 & dpto==1
+
+			
+			sum persona [fw=pesoano] if hogares_mixtos==1 & dpto==1
+			di(198/15054)
+			*/
+	
+	/*
+	/*
+	/*Creamos una variable por hogar que diga si va a  pública o privada*/
+	egen hogar_primpublica= max(primaria_publica), by(numero)
+	egen hogar_primprivada= max(primaria_privada), by(numero)
+	egen hogar_basicapublica= max(basica_publica), by(numero)
+	egen hogar_basicaprivada= max(basica_privada), by(numero)
+	egen hogar_bachilleratopublica= max(bachillerato_publica), by(numero)
+	egen hogar_bachilleratoprivada= max(bachillerato_privada), by(numero)
+	
+	gen persona=1
+	*/
+	
+	/*
+	sum persona [fw=pesoano] if hogar_primpublica==1 & hogar_primprivada==0 & hogar_basicapublica==0 & hogar_basicaprivada==0 & hogar_bachilleratopublica==0 & hogar_bachilleratoprivada==0
+	sum persona [fw=pesoano] if hogar_primpublica==0 & hogar_primprivada==1 & hogar_basicapublica==0 & hogar_basicaprivada==0 & hogar_bachilleratopublica==0 & hogar_bachilleratoprivada==0
+	sum persona [fw=pesoano] if hogar_primpublica==0 & hogar_primprivada==0 & hogar_basicapublica==1 & hogar_basicaprivada==0 & hogar_bachilleratopublica==0 & hogar_bachilleratoprivada==0
+	sum persona [fw=pesoano] if hogar_primpublica==0 & hogar_primprivada==0 & hogar_basicapublica==0 & hogar_basicaprivada==1 & hogar_bachilleratopublica==0 & hogar_bachilleratoprivada==0
+	sum persona [fw=pesoano] if hogar_primpublica==0 & hogar_primprivada==0 & hogar_basicapublica==0 & hogar_basicaprivada==0 & hogar_bachilleratopublica==1 & hogar_bachilleratoprivada==0
+	sum persona [fw=pesoano] if hogar_primpublica==0 & hogar_primprivada==0 & hogar_basicapublica==0 & hogar_basicaprivada==0 & hogar_bachilleratopublica==0 & hogar_bachilleratoprivada==1
+	*/
+	
+	********************************************************************************
+	*HAY QUE VER QUE HACER CON ESTOS HOGARES que tienen personas en udelar y personas en privada por ahora los sacamos*
+	gen hogares_mixtos=1 if hogares_udelar==1 & hogares_univpriv==1
+	keep if hogares_mixtos!=1
+	********************************************************************************
+	*/
+	
+	
+	
+*-VÍA 2: Ver a qué sistema (privado o público) fueron en cada etapa los propios estudiantes de la Udelar*
+	drop _all
+	cd "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\ECH\Bases Personas"
+	use "p2019_final", clear
+
+	rename *, lower
+	duplicates drop
+	*Nos quedamos con los que tienen entre 18-20 años*
+	keep if (e27>=18) & (e27<=20)
+
+	*Desagregamos a las personas entre los que van a UdelaR, univerisdad privada y los que no asisten*
+	gen udelar=1 if e218==1 & e219==1
+	gen universidad_privada=1 if e218==1 & e219==2
+	gen no_asiste=1 if udelar!=1 & universidad_privada!=1
+
+	*Vemos cuantos de los que van a udelar y privada fueron a ciclo básico y bachillerato privado*
+	sum udelar universidad_privada [fw=pesoano]
+	sum udelar universidad_privada [fw=pesoano] if e210_1==2 & e210_2==2 
+	
+	di((8051+2802)/(30655+4181))
+	
+	*Vemos cuantos de los que van a udelar fueron a ciclo básico y bachillerato privado*
+	di((8051)/(30655))
+
+	*Vemos cuantos de los que van a universidad privada fueron a ciclo básico y bachillerato privado*
+	di((2802)/(4181))
+	
+	*Vemos cuantos de los que van a udelar y privada fueron a ciclo básico privado*
+	sum udelar universidad_privada [fw=pesoano]
+	sum udelar universidad_privada [fw=pesoano] if e210_1==2
+	di((10890+3341)/(30655+4181))
+	*Vemos cuantos de los que van a udelar fueron a ciclo básico privado*
+	di(10890/30655)
+	*Vemos cuantos de los que van a universidad privada fueron a ciclo básico privado*
+	di(3341/4181)
+	
+	*Vemos cuantos de los que van a udelar y privada fueron a bachillerato privado*
+	sum udelar universidad_privada [fw=pesoano]
+	sum udelar universidad_privada [fw=pesoano] if e210_2==2
+	di((2840+8156)/(30655+4181))
+	*Vemos cuantos de los que van a udelar fueron a bachillerato privado*
+	di(8156/30655)
+	*Vemos cuantos de los que van a universidad privada fueron a bachillerato privado*
+	di(2840/4181)
+	
+	*Solo Monteivdeo:
+			*Vemos cuantos de los que van a udelar y privada fueron a ciclo básico privado*
+			sum udelar universidad_privada [fw=pesoano] if dpto==1
+			sum udelar universidad_privada [fw=pesoano] if e210_1==2 & dpto==1
+			di((7812+2447)/(15054+2736))
+			*Vemos cuantos de los que van a udelar fueron a ciclo básico privado*
+			di(7812/15054)
+			*Vemos cuantos de los que van a universidad privada fueron a ciclo básico privado*
+			di(2447/2736)
+			
+			*Vemos cuantos de los que van a udelar y privada fueron a bachillerato privado*
+			sum udelar universidad_privada [fw=pesoano] if dpto==1
+			sum udelar universidad_privada [fw=pesoano] if e210_2==2 & dpto==1
+			di((6429+2177)/(15054+2736))
+			*Vemos cuantos de los que van a udelar fueron a bachillerato privado*
+			di(6429/15054)
+			*Vemos cuantos de los que van a universidad privada fueron a bachillerato privado*
+			di(2177/2736)
+
+	
+	********************************************************************************
+	
+	*Nos quedamos solo con los que van a Udelar*
+	keep if udelar==1
+	
+	/*Vemos cuantos de los que iban a udelar fueron a primaria privada, ciclo 
+	básico privado y bachillerato privado*/
+	gen primariabasico_bachillerato=1 if e198==2 & e210_1==2 & e210_2==2 & e210_3==0 & e213==0
+	sum  primariabasico_bachillerato [fw=pesoano]
+	/*Vemos cuantos de los que iban a udelar fueron a primaria privada, ciclo 
+	básico privado y bachillerato tecnológico privado*/
+	gen primariabasico_tecnologico=1 if e198==2 & e210_1==2 & e210_2==0 & e210_3==2 & e213==0
+	sum primariabasico_tecnologico [fw=pesoano]
+	/*Vemos cuantos de los que iban a udelar fueron a primaria privada, ciclo 
+	básico privado y tecnica privado*/
+	gen primariabasico_tecnica =1 if e198==2 & e210_1==2 & e210_2==0 & e210_3==0 & e213==2
+	sum primariabasico_tecnica [fw=pesoano]
+	/*Vemos cuantos de los que iban a udelar fueron a primaria privada, ciclo 
+	básico privado, bachillerato privado, bachillerato tecnológico privado y tecnica privado*/
+	gen cinco_privado =1 if e198==2 & e210_1==2 & e210_2==2 & e210_3==2 & e213==2
+	sum cinco_privado [fw=pesoano]
+	/*Vemos cuantos de los que iban a udelar fueron a primaria privada, ciclo 
+	básico privado, bachillerato privado y bachillerato tecnológico privado*/
+	gen primsec_bachtec=1 if e198==2 & e210_1==2 & e210_2==2 & e210_3==2 & e213==0
+	sum primsec_bachtec [fw=pesoano]
+	/*Vemos cuantos de los que iban a udelar fueron a primaria privada, ciclo 
+	básico privado,bachillerato tecnológico privado y tecnica privado*/
+	gen primsec_tectecnica=1 if e198==2 & e210_1==2 & e210_2==0 & e210_3==2 & e213==2
+	sum primsec_tectecnica [fw=pesoano]
+	/*Vemos cuantos de los que iban a udelar fueron a primaria privada, ciclo 
+	básico privado, bachillerato privado y tecnica privado*/
+	gen primsec_bachtecnica=1 if e198==2 & e210_1==2 & e210_2==2 & e210_3==0 & e213==2
+	sum primsec_bachtecnica [fw=pesoano]
+
+	*Desagregamos por estrato socioeconómico a todos los estudiantes de Udelar*
+	tab estred13 [fw=pesoano]
+		*Dentro de los estudiantes de Montevideo*
+			*Porcentaje que representa Montevideo en el total*
+			di((1006+1983+3737+5345+2983)/30655)
+			*Bajo*
+			di((1006)/(1006+1983+3737+5345+2983))
+			*Medio-bajo*
+			di((1983)/(1006+1983+3737+5345+2983))
+			*Medio*
+			di((3737)/(1006+1983+3737+5345+2983))
+			*Medio-alto*
+			di((5345)/(1006+1983+3737+5345+2983))
+			*Alto*
+			di((2983)/(1006+1983+3737+5345+2983))
+
+	/*Desagregamos por estrato socioeconómico a los estudiantes de Udelar que
+	vienen de ciclo básico privado*/
+	tab estred13 [fw=pesoano] if e210_1==2
+			*Dentro de los estudiantes de Montevideo*
+			*Porcentaje que representa Montevideo en el total*
+			di((133+819+1350+3077+2433)/10890)
+			*Bajo*
+			di((133)/(133+819+1350+3077+2433))
+			*Medio-bajo*
+			di((819)/(133+819+1350+3077+2433))
+			*Medio*
+			di((1350)/(133+819+1350+3077+2433))
+			*Medio-alto*
+			di((3077)/(133+819+1350+3077+2433))
+			*Alto*
+			di((2433)/(133+819+1350+3077+2433))
+	
+	/*Desagregamos por estrato socioeconómico a los estudiantes de Udelar que
+	vienen de bachillerato privado*/
+	tab estred13 [fw=pesoano] if e210_2==2
+			*Dentro de los estudiantes de Montevideo*
+			*Porcentaje que representa Montevideo en el total*
+			di((39+534+1036+2426+2394)/8156)
+			*Bajo*
+			di((39)/(39+534+1036+2426+2394))
+			*Medio-bajo*
+			di((534)/(39+534+1036+2426+2394))
+			*Medio*
+			di((1036)/(39+534+1036+2426+2394))
+			*Medio-alto*
+			di((2426)/(39+534+1036+2426+2394))
+			*Alto*
+			di((2394)/(39+534+1036+2426+2394))
+	
+	*gen =1 if e198==0 & e210_1==0 & e210_2==0 & e210_3==0 & e213==0*
+	
+	
+	/*
+	*Vemos cuantos de los que iban a udelar fueron a primaria y secundaria privada*
+	gen primaria_secundaria=1 if e198==2 & e210_1==2 & e210_3==0 & e213==0
+	sum  primaria_secundaria [fw=pesoano]
+
+
+	*Vemos cuantos de los que iban a udelar fueron a escuela privada, primaria privada y tecnologico privada*
+	gen primariasecundaria_tecnologico=1 if e198==2 & e210_1==2 & e210_3==2 & e213==0
+	sum primariasecundaria_tecnologico [fw=pesoano]
+
+	*Vemos cuantos de los que iban a udelar fueron a escuela privada, primaria privada y técnica privada*
+	gen primariasecundaria_tecnica=1 if e198==2 & e210_1==2 & e210_3==0 & e213==2
+	sum primariasecundaria_tecnica [fw=pesoano]
+
+	*Vemos cuantos de los que iban a udelar fueron a escuela privada, primaria privada,tecnologico privada y técnica privada*
+	gen primariasecundaria_tecnoytecnica=1 if e198==2 & e210_1==2 & e210_3==2 & e213==2
+	sum primariasecundaria_tecnoytecnica [fw=pesoano]
+	*/
+
+	edit e194 e198 e210_1 e210_3 e213
+
+
+	/*
+	*Personas que van a universidad privada y sus hermanos a eduación secundaria pública*
+	gen unipriv_privado=1 if universidad_privada==1 & 
+	*Personas que van a universidad privada y sus hermanos a eduación secundaria privada*
+	gen unipriv_ publica=1 if universidad_privada==1 & 
+	*Personas que van a Udelar y sus hermanos a eduación secundaria pública*
+	gen udelar_privada=1 if udelar==1 & 
+	*Personas que van a Udelar y sus hermanos a eduación secundaria privada*
+	gen udelar_publica=1 if udelar==1 & 
+	*/
+	
+********************************************************************************
+/* Comparamos estudiantes de la Udelar que fueron a ciclo básico privado con 
+datos de 2015 y 2010*/
+
+
+*************************************2015***************************************	
+	drop _all
+	cd "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\ECH\Bases Personas"
+	use "p2015", clear
+
+	rename *, lower
+	duplicates drop
+	*Nos quedamos con los que tienen entre 18-20 años*
+	keep if (e27>=18) & (e27<=20)
+
+	*Desagregamos a las personas entre los que van a UdelaR, univerisdad privada y los que no asisten*
+	gen udelar=1 if e218==1 & e219==1
+	gen universidad_privada=1 if e218==1 & e219==2
+	gen no_asiste=1 if udelar!=1 & universidad_privada!=1
+
+
+	*Solo Monteivdeo:
+			*Vemos cuantos de los que van a udelar y privada fueron a ciclo básico privado*
+			sum udelar universidad_privada [fw=pesoano] if dpto==1
+			sum udelar universidad_privada [fw=pesoano] if e210_1==2 & dpto==1
+			*Vemos cuantos de los que van a udelar fueron a ciclo básico privado*
+			di(7173/12393)
+			
+			
+			
+	*Nos quedamos solo con los que van a Udelar*
+	keep if udelar==1		
+	tab udelar [fw=pesoano]
+
+	*Desagregamos por estrato socioeconómico a todos los estudiantes de Udelar*
+	tab estred13 [fw=pesoano]
+		*Dentro de los estudiantes de Montevideo*
+			*Porcentaje que representa Montevideo en el total*
+			di((646+1653+3589+4169+2336)/25401)
+			*Bajo*
+			di(646/(646+1653+3589+4169+2336))
+			*Medio-bajo*
+			di(1653/(646+1653+3589+4169+2336))
+			*Medio*
+			di(3589/(646+1653+3589+4169+2336))
+			*Medio-alto*
+			di(4169/(646+1653+3589+4169+2336))
+			*Alto*
+			di(2336/(646+1653+3589+4169+2336))
+
+	/*Desagregamos por estrato socioeconómico a los estudiantes de Udelar que
+	vienen de ciclo básico privado*/
+	tab estred13 [fw=pesoano] if e210_1==2
+			*Dentro de los estudiantes de Montevideo*
+			*Porcentaje que representa Montevideo en el total*
+			di((174+639+1505+2820+2035)/9818)
+			*Bajo*
+			di(174/(174+639+1505+2820+2035))
+			*Medio-bajo*
+			di(639/(174+639+1505+2820+2035))
+			*Medio*
+			di(1505/(174+639+1505+2820+2035))
+			*Medio-alto*
+			di(2820/(174+639+1505+2820+2035))
+			*Alto*
+			di(2035/(174+639+1505+2820+2035))
+	
+	/*Desagregamos por estrato socioeconómico a los estudiantes de Udelar que
+	vienen de bachillerato privado*/
+	tab estred13 [fw=pesoano] if e210_2==2
+			*Dentro de los estudiantes de Montevideo*
+			*Porcentaje que representa Montevideo en el total*
+			di((104+542+1328+2388+1876)/7970)
+			*Bajo*
+			di(104/(104+542+1328+2388+1876))
+			*Medio-bajo*
+			di(542/(104+542+1328+2388+1876))
+			*Medio*
+			di(1328/(104+542+1328+2388+1876))
+			*Medio-alto*
+			di(2388/(104+542+1328+2388+1876))
+			*Alto*
+			di(1876/(104+542+1328+2388+1876))
+	
+
