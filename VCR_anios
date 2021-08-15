@@ -1,0 +1,265 @@
+*Generamos una base con el promedio de documentos por país entre 2014 y 2018. 
+*Se corre una única vez
+	*Se pasan las bases a .dta*	
+		*2014*
+			*drop _all
+			*import excel "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\scimagojr country rank 2014.xlsx", sheet("Sheet1") firstrow
+			*rename B anio_2014
+			*rename Country pais
+			*save "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\scimagojr country rank 2014.dta", replace
+		*2015*
+			*drop _all
+			*import excel "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\scimagojr country rank 2015.xlsx", sheet("Sheet1") firstrow
+			*rename B anio_2015
+			*rename Country pais
+			*save "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\scimagojr country rank 2015.dta", replace
+		*2016*
+			*drop _all
+			*import excel "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\scimagojr country rank 2016.xlsx", sheet("Sheet1") firstrow
+			*rename B anio_2016
+			*rename Country pais
+			*save "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\scimagojr country rank 2016.dta", replace
+		*2017*
+			*drop _all
+			*import excel "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\scimagojr country rank 2017.xlsx", sheet("Sheet1") firstrow
+			*rename B anio_2017
+			*rename Country pais
+			*save "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\scimagojr country rank 2017.dta", replace
+		*2018*
+			*drop _all
+			*import excel "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\scimagojr country rank 2018.xlsx", sheet("Sheet1") firstrow
+			*rename B anio_2018
+			*rename Country pais
+			*save "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\scimagojr country rank 2018.dta", replace
+
+		
+	*Se mergean las bases*
+		*drop _all
+		*cd "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\Excel y bases de documentos por año y país"
+		*global ruta "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\Excel y bases de documentos por año y país"
+		*use "scimagojr country rank 2014.dta", clear
+		*merge m:m pais using "$ruta\scimagojr country rank 2015.dta"
+		*drop _merge
+		*merge m:m pais using "$ruta\scimagojr country rank 2016.dta"
+		*drop _merge	
+		*merge m:m pais using "$ruta\scimagojr country rank 2017.dta"
+		*drop _merge
+		*merge m:m pais using "$ruta\scimagojr country rank 2018.dta"
+		*drop _merge
+		*Se crea la variable average que tiene el promedio de documentos por país
+		*en el periodo
+		*egen documentos_promedio=rowmean(anio_2014-anio_2018)
+		*drop anio_*
+		*save "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\scimagojr.dta"
+
+*Generamos una base con el promedio de inversión por país entre 2014 y 2018. 
+*Se corre un única vez*
+		*drop _all
+		*global ruta "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años"
+		*import excel "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\Inversión ajustada a precios 2018.xlsx", sheet("Final Stata") firstrow
+		*destring anio_2014 anio_2015 anio_2016 anio_2017 anio_2018, replace
+		*egen inversion_promedio=rmean(anio_2014-anio_2018)
+		*drop anio_*
+		*save "$ruta\inversion.dta"
+		
+*CON INVERSIÓN*
+	*Mergeamos las bases*		
+		*drop _all
+		*cd "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años"
+		*use "scimagojr.dta", clear	
+		*merge 1:1 pais using "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\inversion.dta"
+		*keep if _merge==3
+		*drop _merge
+		*drop if (documentos_promedio==. | inversion_promedio==.)
+		*save "C:\Users\zequi\Desktop\ORT\VCR UY investigación\sciamgo_e_inversion.dta"
+
+	*Acá se empieza a trabajar con la base propiamente*
+	drop _all
+	cd "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años"
+	use "sciamgo_e_inversion.dta", clear
+	gen log_cant_docs = log10(documentos_promedio) 
+	gen log_inv = log10(inversion_promedio)
+	rename documentos_promedio cant_docs
+		*Regresiones*
+			*Regresión con todos los países*		
+				reg log_cant_docs log_inv 		
+		
+			*Pasamos a hacerlo en loop, para los casos con barreras de ingreso*
+				*Definimos un local llamado minimo que es mínimo valor de cantidad de 
+				*documentos que debe incluir la regresión. Es decir, para el local con valor 
+				*50, la regresión incluye a todos los países con 50 o más documentos publicados
+				local minimo 50 100 150 200 250 300 350 400 450 500 550 600	650 700 750 800 850 900	950 1000 1050 1100 1150 1200 1250 1300 1350 1400 1450 1500
+				foreach i of local minimo{
+				log using "reg_minimo_`i'.log", replace text
+				reg log_cant_docs log_inv if (cant_docs>`i' | cant_docs==`i')
+				log close
+				}
+		
+		*Gráficos con Intervalo de confianza*
+		*Creamos loop para hacer gráficos que muestren los intervalos de confianza*
+			*Como a menos estricta la barrera, mayor cantidad de países, cremaos la 
+			*variable etiqueta así solo se destaca la posición de Uruguay
+			gen etiqueta=pais if pais=="Uruguay"
+			local minimo 50 100 150 200 250 300 350 400 450 500 550 600	650 700 750 800 850 900	950 1000 1050 1100 1150 1200 1250 1300 1350 1400 1450 1500
+			foreach i of local minimo{
+			reg log_cant_docs log_inv if (cant_docs>`i' | cant_docs==`i')
+			twoway lfitci  log_cant_docs log_inv if (cant_docs>`i' | cant_docs==`i') || (scatter log_cant_docs log_inv  if (cant_docs>`i' | cant_docs==`i'), msize(vtiny) msymbol(point) mlabel(etiqueta)) (scatter  log_cant_docs log_inv if (cant_docs>`i' | cant_docs==`i') & pais=="Uruguay", msize(vtiny) msymbol(point) mlabel(etiqueta) mcolor(red))
+			*twoway lfitci log_inv log_cant_docs || scatter log_inv log_cant_docs if pais=="Uruguay", msize(small) msymbol(circle) mlabel(etiqueta)
+			graph export `i'.pdf
+			*graph save `"`i'.png"', replace
+			}
+			
+		*Creamos el mismo gráfico para cuando están todos los países* 
+			reg log_cant_docs log_inv 		
+			twoway lfitci log_cant_docs log_inv || (scatter log_cant_docs log_inv, msize(vtiny) msymbol(point)) (scatter log_cant_docs log_inv  if pais=="Uruguay", msize(vtiny) msymbol(point) mlabel(etiqueta) mcolor(red))
+			graph export todos.pdf
+			*graph save `"todos.png"', replace
+			
+
+	*Cálculo del intervalo de confianza*
+			*3- Alternativa con error *		
+				*Para todos*
+					drop _all
+					cd "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años"
+					use "sciamgo_e_inversion.dta", clear
+					gen log_cant_docs = log10(documentos_promedio) 
+					gen log_inv = log10(inversion_promedio)
+					rename documentos_promedio cant_docs
+					
+					log using "IC_todos.log", replace text
+					reg log_cant_docs log_inv 		
+					margins, at(log_inv=5.4136829)
+					predict xb,xb 
+					predict error, stdp
+					generate lb = xb - invttail(e(df_r),0.05)*error
+					generate ub = xb + invttail(e(df_r),0.05)*error
+					generate plb = invlogit(lb)
+					generate pub = invlogit(ub)		
+					tab lb if pais=="Uruguay"
+					tab ub if pais=="Uruguay"							
+					drop error xb lb ub plb pub
+					log close
+					
+				*IC con barreras de ingreso*
+					local minimo 50 100 150 200 250 300 350 400 450 500 550 600	650 700 750 800 850 900	950 1000 1050 1100 1150 1200 1250 1300 1350 1400 1450 1500
+					foreach i of local minimo{
+					log using "IC_`i'.log", replace text
+					reg log_cant_docs log_inv if (cant_docs>`i' | cant_docs==`i')
+					margins, at(log_inv=5.4136829)
+					predict xb,xb 
+					predict error, stdp
+					generate lb = xb - invttail(e(df_r),0.05)*error
+					generate ub = xb + invttail(e(df_r),0.05)*error
+					generate plb = invlogit(lb)
+					generate pub = invlogit(ub)		
+					tab lb if pais=="Uruguay"
+					tab ub if pais=="Uruguay"							
+					drop error xb lb ub plb pub
+					log close
+					}			
+		
+*CON INVESTIGADORES*		
+	*Creamos *
+		*drop _all
+		*import excel "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\Cantidad de investigadores por pais.xlsx", sheet("Hoja1") firstrow
+		*drop G
+		*destring anio_2014 anio_2015 anio_2016 anio_2017 anio_2018, replace
+		*egen investigadores_promedio=rowmean(anio_2014-anio_2018)
+		*drop anio_*
+		*save "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\investigadores.dta"
+
+	*Mergeamos las bases*		
+		*drop _all
+		*cd "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años"
+		*use "scimagojr.dta", clear	
+		*merge m:m pais using "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\investigadores.dta"
+		*keep if _merge==3
+		*drop _merge
+		*drop if (documentos_promedio==. | investigadores_promedio==.)
+		*save "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años\sciamgo_e_investigadores.dta"
+
+	*Acá se empieza a trabajar con la base propiamente*
+	drop _all
+	cd "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años"
+	use "sciamgo_e_investigadores.dta", clear
+	gen log_cant_docs = log10(documentos_promedio) 
+	gen log_cant_investigadores = log10(investigadores_promedio)
+	rename documentos_promedio cant_docs
+	
+	*Regresiones*
+		*Regresión con todos los países*		
+			reg log_cant_docs log_cant_investigadores
+
+		*Pasamos a hacerlo en loop, para los casos con barreras de ingreso*
+			*Definimos un local llamado minimo que es mínimo valor de cantidad de 
+			*documentos que debe incluir la regresión. Es decir, para el local con valor 
+			*50, la regresión incluye a todos los países con 50 o más documentos publicados
+			local minimo 50 100 150 200 250 300 350 400 450 500 550 600	650 700 750 800 850 900	950 1000 1050 1100 1150 1200 1250 1300 1350 1400 1450 1500
+			foreach i of local minimo{
+			log using "reg_minimo_`i'.log", replace text
+			reg log_cant_docs log_cant_investigadores if (cant_docs>`i' | cant_docs==`i')
+			log close
+			}
+
+	*Gráficos con Intervalo de confianza*
+		*Creamos loop para hacer gráficos que muestren los intervalos de confianza*
+			*Como a menos estricta la barrera, mayor cantidad de países, cremaos la 
+			*variable etiqueta así solo se destaca la posición de Uruguay
+			gen etiqueta=pais if pais=="Uruguay"
+			local minimo 50 100 150 200 250 300 350 400 450 500 550 600	650 700 750 800 850 900	950 1000 1050 1100 1150 1200 1250 1300 1350 1400 1450 1500
+			foreach i of local minimo{
+			reg log_cant_docs log_cant_investigadores if (cant_docs>`i' | cant_docs==`i')
+			twoway lfitci  log_cant_docs log_cant_investigadores if (cant_docs>`i' | cant_docs==`i') || (scatter log_cant_docs log_cant_investigadores  if (cant_docs>`i' | cant_docs==`i'), msize(vtiny) msymbol(point) mlabel(etiqueta)) (scatter  log_cant_docs log_cant_investigadores if (cant_docs>`i' | cant_docs==`i') & pais=="Uruguay", msize(vtiny) msymbol(point) mlabel(etiqueta) mcolor(red))
+			*twoway lfitci log_cant_investigadores log_cant_docs || scatter log_cant_investigadores log_cant_docs if pais=="Uruguay", msize(small) msymbol(circle) mlabel(etiqueta)
+			graph export `i'.pdf
+			*graph save `"`i'.png"', replace
+			}
+			
+		*Creamos el mismo gráfico para cuando están todos los países* 
+			reg log_cant_docs log_cant_investigadores 		
+			twoway lfitci log_cant_docs log_cant_investigadores || (scatter log_cant_docs log_cant_investigadores, msize(vtiny) msymbol(point)) (scatter log_cant_docs log_cant_investigadores  if pais=="Uruguay", msize(vtiny) msymbol(point) mlabel(etiqueta) mcolor(red))
+			graph export todos.pdf
+			*graph save `"todos.png"', replace
+			
+
+	*Cálculo del intervalo de confianza*
+			*3- Alternativa con error *		
+				*Para todos*
+					drop _all
+					cd "C:\Users\zequi\Desktop\ORT\VCR UY investigación\Comparación por años"
+					use "sciamgo_e_investigadores.dta", clear
+					gen log_cant_docs = log10(documentos_promedio) 
+					gen log_cant_investigadores = log10(investigadores_promedio)
+					rename documentos_promedio cant_docs
+	
+					log using "IC_todos.log", replace text
+					reg log_cant_docs log_cant_investigadores 		
+					margins, at(log_cant_investigadores=3.363386)
+					predict xb,xb 
+					predict error, stdp
+					generate lb = xb - invttail(e(df_r),0.05)*error
+					generate ub = xb + invttail(e(df_r),0.05)*error
+					generate plb = invlogit(lb)
+					generate pub = invlogit(ub)		
+					tab lb if pais=="Uruguay"
+					tab ub if pais=="Uruguay"							
+					drop error xb lb ub plb pub
+					log close
+					
+				*IC con barreras de ingreso*
+					local minimo 50 100 150 200 250 300 350 400 450 500 550 600	650 700 750 800 850 900	950 1000 1050 1100 1150 1200 1250 1300 1350 1400 1450 1500
+					foreach i of local minimo{
+					log using "IC_`i'.log", replace text
+					reg log_cant_docs log_cant_investigadores if (cant_docs>`i' | cant_docs==`i')
+					margins, at(log_cant_investigadores=3.363386)
+					predict xb,xb 
+					predict error, stdp
+					generate lb = xb - invttail(e(df_r),0.05)*error
+					generate ub = xb + invttail(e(df_r),0.05)*error
+					generate plb = invlogit(lb)
+					generate pub = invlogit(ub)		
+					tab lb if pais=="Uruguay"
+					tab ub if pais=="Uruguay"							
+					drop error xb lb ub plb pub
+					log close
+					}		
