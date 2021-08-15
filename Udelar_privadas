@@ -28,7 +28,7 @@ Universidad Privada*/
 	
 	/*Desagregamos a las personas entre 18 y 20 años entre los que van a UdelaR, 
 	univerisdad privada y los que no asisten*/
-	gen udelar=1 if e218==1 & e219==1 & (e27>=18) & (e27<=20)
+	gen udelar=1 if e218==1 & e219==1 & (e27>=18) & (e27<=20) 
 	gen universidad_privada=1 if e218==1 & e219==2 & (e27>=18) & (e27<=20)
 	gen no_asiste=1 if udelar!=1 & universidad_privada!=1 & (e27>=18) & (e27<=20)
 	*Consideramos relevantes a las personas que cumplen algúno de los 3 criterios*
