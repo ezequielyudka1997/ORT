@@ -28,7 +28,7 @@
 		*Creamos loop para hacer gráficos que muestren los intervalos de confianza*
 			*Como a menos estricta la barrera, mayor cantidad de países, cremaos la 
 			*variable etiqueta así solo se destaca la posición de Uruguay
-			gen etiqueta=pais if pais=="Uruguay"
+			gen etiqueta=pais if pais=="Uruguay" 
 			local minimo 50 100 150 200 250 300 350 400 450 500 550 600	650 700 750 800 850 900	950 1000 1050 1100 1150 1200 1250 1300 1350 1400 1450 1500
 			foreach i of local minimo{
 			reg log_cant_docs log_inv if (cant_docs>`i' | cant_docs==`i')
