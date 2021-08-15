@@ -38,7 +38,7 @@
 			*graph save `"`i'.png"', replace
 			}
 			
-		*Creamos el mismo gráfico para cuando están todos los países* 
+		*Creamos el mismo gráfico para cuando están todos los  países* 
 			reg log_cant_docs log_inv 		
 			twoway lfitci log_cant_docs log_inv || (scatter log_cant_docs log_inv, msize(vtiny) msymbol(point)) (scatter log_cant_docs log_inv  if pais=="Uruguay", msize(vtiny) msymbol(point) mlabel(etiqueta) mcolor(red))
 			graph export todos.pdf
