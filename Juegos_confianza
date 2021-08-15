@@ -1,0 +1,1300 @@
+drop _all
+cd "C:\Users\yudka\Desktop\Bases"
+
+/*
+-Creamos las bases en .DTA para cada hoja de los diferentes excel. Esto se hace
+una única vez.
+
+		import excel using "C:\Users\yudka\Desktop\Bases\Bases Formularios Juegos.xlsx", describe
+		forvalues sheet=1/`=r(N_worksheet)' {  
+		local sheetname=r(worksheet_`sheet')  
+		import excel using "C:\Users\yudka\Desktop\Bases\Bases Formularios Juegos.xlsx", sheet("`sheetname'") firstrow
+		save "BasesFormulariosJuegos_`sheetname'", replace  
+		clear
+		}
+
+		import excel using "C:\Users\yudka\Desktop\Bases\Base de tarjetas.xlsx", describe
+		forvalues sheet=1/`=r(N_worksheet)' {  
+		local sheetname=r(worksheet_`sheet')  
+		import excel using "C:\Users\yudka\Desktop\Bases\Base de tarjetas.xlsx", sheet("`sheetname'") firstrow
+		save "Basedetarjetas_`sheetname'", replace  
+		clear
+		}
+
+		import excel using "C:\Users\yudka\Desktop\Bases\Base Emparejamientos.xlsx", describe
+		forvalues sheet=1/`=r(N_worksheet)' {  
+		local sheetname=r(worksheet_`sheet')  
+		import excel using "C:\Users\yudka\Desktop\Bases\Base Emparejamientos.xlsx", sheet("`sheetname'") firstrow
+		save "BaseEmparejamientos_`sheetname'", replace  
+		clear
+		}
+
+		import excel using "C:\Users\yudka\Desktop\Bases\Base Encuesta post juego.xlsx", describe
+		forvalues sheet=1/`=r(N_worksheet)' {  
+		local sheetname=r(worksheet_`sheet')  
+		import excel using "C:\Users\yudka\Desktop\Bases\Base Encuesta post juego.xlsx", sheet("`sheetname'") firstrow
+		save "BaseEncuestapostjuego_`sheetname'", replace  
+		clear
+		}
+
+		import excel using "C:\Users\yudka\Desktop\Bases\BaseComunicaciones.xlsx", describe
+		forvalues sheet=1/`=r(N_worksheet)' {  
+		local sheetname=r(worksheet_`sheet')  
+		import excel using "C:\Users\yudka\Desktop\Bases\BaseComunicaciones.xlsx", sheet("`sheetname'") firstrow
+		save "BaseComunicaciones_`sheetname'", replace  
+		clear
+		}
+
+		import excel using "C:\Users\yudka\Desktop\Bases\Base Encuesta previa pago.xlsx", describe
+		forvalues sheet=1/`=r(N_worksheet)' {  
+		local sheetname=r(worksheet_`sheet')  
+		import excel using "C:\Users\yudka\Desktop\Bases\Base Encuesta previa pago.xlsx", sheet("`sheetname'") firstrow
+		save "BaseEncuestapreviapago_`sheetname'", replace  
+		clear
+		}
+*/
+*Mergeamos las distintas bases para formar una única*
+		*use "Basedetarjetas_Sheet1.dta", clear*
+		*Creamos un directorio llamado out para facilitar el uso del DTA*
+		global out "C:\Users\yudka\Desktop\Bases"
+		use "Basedetarjetas_Sheet1.dta", clear
+		merge m:m A1 using "$out\BaseEmparejamientos_Jugadores 1.dta"
+		drop _merge
+		merge m:m A1 using "$out\BaseEmparejamientos_Jugadores 2.dta"
+		drop _merge
+		merge m:m A1 using "$out\BaseEncuestapostjuego_Sheet1.dta"
+		drop _merge
+		merge m:m A1 using "$out\BasesFormulariosJuegos_Jugadores 1.dta"
+		drop _merge
+		merge m:m A1 using "$out\BasesFormulariosJuegos_Jugadores 2.dta"
+		drop _merge
+		merge m:m A1 using "$out\BaseEncuestapreviapago_Hoja1.dta"
+		drop _merge
+
+*Llamamos a todas las bases en minúscula*
+		rename *, lower
+
+*Como quedan 2 líneas que son todo missing*
+		drop if a1==.
+
+*Eliminamos algunas variables que no son útiles para el análisis en cuestión*
+		drop z1 z2 z3 z4 l1 l6 l8 l10 l12 
+
+
+/*
+Hay 2 papeles de encuesta previo pago para el jugador 137 y ningúna para el 
+jugador 135. Como igualmente está información no va a ser utilizada por ser 
+pocos los participantes que participaron en 2007 y 2020, le damos drop a las
+variables que nos generarían conflicto.
+*/
+		drop h1	h21	h22	h3	h4
+		duplicates drop
+
+*Ordenamos por a1 que es el número que identifica a c/jugador*
+	sort a1	
+
+*Renombramos variables por facilidad y creamos algunas que nos van a servir*
+		gen edad1739=1 if (edad>=17 & edad<=39)
+		gen edad4083=1 if (edad>=40 & edad<=83)
+		gen edad1832=1 if (edad>=18 & edad<=32)
+		gen edad3349=1 if (edad>=33 & edad<=49)
+		gen edad50=1 if (edad>=50)
+/*Los estratos de barrios se siguió criterio de Diego Lamé. El participante 656 
+vive en Buenos Aires y Montevideo por eso en barrio dice Prado y La Matanza. De 
+los participantes 287, 364,365,412 no se tiene información de barrio.*/
+		gen estratoalto=1 if (barrio=="Carrasco" | barrio=="POCITOS" | barrio=="Pocitos" | barrio=="Pocitos Nuevo" | barrio=="Carrasco" |  barrio=="Carrasco "| barrio=="Punta gorda" | barrio=="Punta Gorda" | barrio=="Punta Carretas" | barrio=="Punta carretas" | barrio=="Buceo" | barrio=="Malvín" | barrio=="Parque rodó" | barrio=="Parque Rodó" | barrio=="Barra de Carrasco" | barrio=="Parque Batlle" | barrio=="PRADO" | barrio=="Prado y La Matanza" | barrio=="Prado")
+		gen estratomedio=1 if (barrio=="Ciudad vieja" | barrio=="Ciudad Vieja" | barrio=="Centro" | barrio=="centro" | barrio=="Tres cruces" | barrio=="CENTRO" | barrio=="Cordón" | barrio=="cordón" | barrio=="La Blanqueada" | barrio=="La blanqueada" | barrio=="Lagomar" | barrio=="Palermo" | barrio=="palermo" | barrio=="Parque de Solymar" | barrio=="Shangrilá" | barrio=="Tres Cruces" | barrio=="Unión" | barrio=="UNIÓN")
+		gen estratobajo=1 if (barrio=="Aguada" | barrio=="AGUADA" | barrio=="Aires Puros" | barrio=="Villa Española" | barrio=="Villa Dolores" | barrio=="Verdisol" | barrio=="Sayago" | barrio=="Salinas" | barrio=="Rincón del cerro" | barrio=="Reus" | barrio=="Reducto" | barrio=="Punta de Rieles" | barrio=="Pueblo Victoria" | barrio=="Playa Pascual" | barrio=="PIEDRAS BLANCAS" | barrio=="Piedras Blancas" | barrio=="Paso Molino" | barrio=="Paso de las Duranas" | | barrio=="Pasó de la Arena" | barrio=="Paso de la Arena" | barrio=="Paso Carrasco" | barrio=="Nuevo París" | barrio=="Marconi" | barrio=="Maracaná" | barrio=="Manga" | barrio=="Manga " | barrio=="Malvín Norte" | barrio=="LECOCQ" | barrio=="Lavalleja" | barrio=="Las Torres" | barrio=="Las Acacias" | barrio=="Larrañaga" | barrio=="La Teja" | barrio=="La Pastora" | barrio=="La Comercial" | barrio=="La comercial" | barrio=="La comercial " | barrio=="La comercial " |barrio=="La comercial " | barrio=="JARDINES DEL HIPÓDROMO" | barrio=="Jacinto vera" | barrio=="Jacinto Vera" | barrio=="Ituzaingo" | barrio=="Ituzaingó" | barrio=="Gorostiaga" | barrio=="goes" | barrio=="Goes" | barrio=="Flor de Maroñas" | barrio=="El Pinar Norte" | barrio=="El Bosque" | barrio=="Curva de Maroñas" | barrio=="Curva de Maroñas " | barrio=="Curva de Maroñas" | barrio=="Conciliación" | barrio=="Colonia Nicolich" | barrio=="Colón" | barrio=="Colon" | barrio=="Cerro" | barrio=="Cerrito" | barrio=="Casabó" | barrio=="Carrasco Norte" | barrio=="Carrasco norte" | barrio=="Cardona" | barrio=="Capurro" | barrio=="Canelones" | barrio=="Brazo Oriental" | barrio=="Brazo oriental" | barrio=="Bolivar" | barrio=="BELVEDERE" | barrio=="Bella vista" | barrio=="Barros Blancos" | barrio=="Barrio Sur" | barrio=="Atahualpa" | barrio=="Arroyo Seco")
+
+
+*1-CUADRO: Distribución de los parrticipantes*
+		gen secundariaincompleta=1 if (ps5==1| ps5==2| ps5==3| ps5==4| ps5==5| ps5==6 |ps5==7| ps5==8| ps5==9| ps5==10| ps5==11| ps5==12) 
+		gen secundariacompleta=1 if ps5==13
+		gen universitario=1 if (ps5==14| ps5==15| ps5==16| ps5==17| ps5==18| ps5==19) 
+		
+		tab secundariacompleta edad
+		tab genero secundariaincompleta if secundariaincompleta==1
+		tab genero secundariacompleta if secundariacompleta==1
+		tab genero universitario if universitario==1	
+
+	*Para facilitar calculos cambiamos los variables del dinero por el valor monetario correspondiente*
+		replace l5=0 if l5==1
+		replace l5=75 if l5==2
+		replace l5=150 if l5==3
+		replace l5=225 if l5==4
+		replace l5=300 if l5==5
+		replace l7=0 if l7==1
+		replace l7=75 if l7==2
+		replace l7=150 if l7==3
+		replace l7=225 if l7==4
+		replace l7=300 if l7==5
+		replace l9=0 if l9==1
+		replace l9=75 if l9==2
+		replace l9=150 if l9==3
+		replace l9=225 if l9==4
+		replace l9=300 if l9==5
+		replace l11=0 if l11==1
+		replace l11=75 if l11==2
+		replace l11=150 if l11==3
+		replace l11=225 if l11==4
+		replace l11=300 if l11==5
+		replace l13=0 if l13==1
+		replace l13=75 if l13==2
+		replace l13=150 if l13==3
+		replace l13=225 if l13==4
+		replace l13=300 if l13==5	
+		replace l14=0 if l14==1
+		replace l14=75 if l14==2
+		replace l14=150 if l14==3
+		replace l14=225 if l14==4
+		replace l14=300 if l14==5
+		replace l14=375 if l14==6
+		replace l14=450 if l14==7
+		replace l14=525 if l14==8	
+		replace l15=0 if l15==1
+		replace l15=75 if l15==2
+		replace l15=150 if l15==3
+		replace l15=225 if l15==4
+		replace l15=300 if l15==5
+		replace l15=375 if l15==6
+		replace l15=450 if l15==7
+		replace l15=525 if l15==8
+		replace l15=600 if l15==9
+		replace l15=675 if l15==10
+		replace l15=750 if l15==11	
+		replace l16=0 if l16==1
+		replace l16=75 if l16==2
+		replace l16=150 if l16==3
+		replace l16=225 if l16==4
+		replace l16=300 if l16==5
+		replace l16=375 if l16==6
+		replace l16=450 if l16==7
+		replace l16=525 if l16==8
+		replace l16=600 if l16==9
+		replace l16=675 if l16==10
+		replace l16=750 if l16==11	
+		replace l16=825 if l16==12
+		replace l16=900 if l16==13
+		replace l16=975 if l16==14	
+		replace l17=0 if l17==1
+		replace l17=75 if l17==2
+		replace l17=150 if l17==3
+		replace l17=225 if l17==4
+		replace l17=300 if l17==5
+		replace l17=375 if l17==6
+		replace l17=450 if l17==7
+		replace l17=525 if l17==8
+		replace l17=600 if l17==9
+		replace l17=675 if l17==10
+		replace l17=750 if l17==11	
+		replace l17=825 if l17==12
+		replace l17=900 if l17==13
+		replace l17=975 if l17==14	
+		replace l17=1050 if l17==15
+		replace l17=1125 if l17==16
+		replace l17=1200 if l17==17		
+		replace l25=0 if l25==1
+		replace l19=0 if l19==1
+		replace l19=75 if l19==2
+		replace l19=150 if l19==3
+		replace l19=225 if l19==4
+		replace l19=300 if l19==5	
+		replace l20=0 if l20==1
+		replace l20=75 if l20==2
+		replace l20=150 if l20==3
+		replace l20=225 if l20==4
+		replace l20=300 if l20==5
+		replace l20=375 if l20==6
+		replace l20=450 if l20==7
+		replace l20=525 if l20==8	
+		replace l21=0 if l21==1
+		replace l21=75 if l21==2
+		replace l21=150 if l21==3
+		replace l21=225 if l21==4
+		replace l21=300 if l21==5
+		replace l21=375 if l21==6
+		replace l21=450 if l21==7
+		replace l21=525 if l21==8
+		replace l21=600 if l21==9
+		replace l21=675 if l21==10
+		replace l21=750 if l21==11	
+		replace l22=0 if l22==1
+		replace l22=75 if l22==2
+		replace l22=150 if l22==3
+		replace l22=225 if l22==4
+		replace l22=300 if l22==5
+		replace l22=375 if l22==6
+		replace l22=450 if l22==7
+		replace l22=525 if l22==8
+		replace l22=600 if l22==9
+		replace l22=675 if l22==10
+		replace l22=750 if l22==11	
+		replace l22=825 if l22==12
+		replace l22=900 if l22==13
+		replace l22=975 if l22==14	
+		replace l23=0 if l23==1
+		replace l23=75 if l23==2
+		replace l23=150 if l23==3
+		replace l23=225 if l23==4
+		replace l23=300 if l23==5
+		replace l23=375 if l23==6
+		replace l23=450 if l23==7
+		replace l23=525 if l23==8
+		replace l23=600 if l23==9
+		replace l23=675 if l23==10
+		replace l23=750 if l23==11	
+		replace l23=825 if l23==12
+		replace l23=900 if l23==13
+		replace l23=975 if l23==14	
+		replace l23=1050 if l23==15
+		replace l23=1125 if l23==16
+		replace l23=1200 if l23==17		
+		replace l25=75 if l25==2
+		replace l25=150 if l25==3
+		replace l25=225 if l25==4
+		replace l25=300 if l25==5	
+		replace l26=0 if l26==1
+		replace l26=75 if l26==2
+		replace l26=150 if l26==3
+		replace l26=225 if l26==4
+		replace l26=300 if l26==5
+		replace l26=375 if l26==6
+		replace l26=450 if l26==7
+		replace l26=525 if l26==8	
+		replace l27=0 if l27==1
+		replace l27=75 if l27==2
+		replace l27=150 if l27==3
+		replace l27=225 if l27==4
+		replace l27=300 if l27==5
+		replace l27=375 if l27==6
+		replace l27=450 if l27==7
+		replace l27=525 if l27==8
+		replace l27=600 if l27==9
+		replace l27=675 if l27==10
+		replace l27=750 if l27==11	
+		replace l28=0 if l28==1
+		replace l28=75 if l28==2
+		replace l28=150 if l28==3
+		replace l28=225 if l28==4
+		replace l28=300 if l28==5
+		replace l28=375 if l28==6
+		replace l28=450 if l28==7
+		replace l28=525 if l28==8
+		replace l28=600 if l28==9
+		replace l28=675 if l28==10
+		replace l28=750 if l28==11	
+		replace l28=825 if l28==12
+		replace l28=900 if l28==13
+		replace l28=975 if l28==14	
+		replace l29=0 if l29==1
+		replace l29=75 if l29==2
+		replace l29=150 if l29==3
+		replace l29=225 if l29==4
+		replace l29=300 if l29==5
+		replace l29=375 if l29==6
+		replace l29=450 if l29==7
+		replace l29=525 if l29==8
+		replace l29=600 if l29==9
+		replace l29=675 if l29==10
+		replace l29=750 if l29==11	
+		replace l29=825 if l29==12
+		replace l29=900 if l29==13
+		replace l29=975 if l29==14	
+		replace l29=1050 if l29==15
+		replace l29=1125 if l29==16
+		replace l29=1200 if l29==17		
+		replace l31=0 if l31==1
+		replace l31=75 if l31==2
+		replace l31=150 if l31==3
+		replace l31=225 if l31==4
+		replace l31=300 if l31==5	
+		replace l32=0 if l32==1
+		replace l32=75 if l32==2
+		replace l32=150 if l32==3
+		replace l32=225 if l32==4
+		replace l32=300 if l32==5
+		replace l32=375 if l32==6
+		replace l32=450 if l32==7
+		replace l32=525 if l32==8	
+		replace l33=0 if l33==1
+		replace l33=75 if l33==2
+		replace l33=150 if l33==3
+		replace l33=225 if l33==4
+		replace l33=300 if l33==5
+		replace l33=375 if l33==6
+		replace l33=450 if l33==7
+		replace l33=525 if l33==8
+		replace l33=600 if l33==9
+		replace l33=675 if l33==10
+		replace l33=750 if l33==11	
+		replace l34=0 if l34==1
+		replace l34=75 if l34==2
+		replace l34=150 if l34==3
+		replace l34=225 if l34==4
+		replace l34=300 if l34==5
+		replace l34=375 if l34==6
+		replace l34=450 if l34==7
+		replace l34=525 if l34==8
+		replace l34=600 if l34==9
+		replace l34=675 if l34==10
+		replace l34=750 if l34==11	
+		replace l34=825 if l34==12
+		replace l34=900 if l34==13
+		replace l34=975 if l34==14	
+		replace l35=0 if l35==1
+		replace l35=75 if l35==2
+		replace l35=150 if l35==3
+		replace l35=225 if l35==4
+		replace l35=300 if l35==5
+		replace l35=375 if l35==6
+		replace l35=450 if l35==7
+		replace l35=525 if l35==8
+		replace l35=600 if l35==9
+		replace l35=675 if l35==10
+		replace l35=750 if l35==11	
+		replace l35=825 if l35==12
+		replace l35=900 if l35==13
+		replace l35=975 if l35==14	
+		replace l35=1050 if l35==15
+		replace l35=1125 if l35==16
+		replace l35=1200 if l35==17		
+
+	
+/*Trabajamos sobre algunas variables porque hay 10 jugadores 1 que jugaron 2 veces.
+Lo que hice fue buscar cuales eran esas varaibles y en excel calcule su l5, l7, 
+l9 y l11 promedio entre ambas jugadas*/
+		replace l5=187.5 if a1==135
+		replace l5=112.5 if a1==163
+		replace l5=75 if a1==180
+		replace l5=300 if a1==219
+		replace l5=225 if a1==253
+		replace l5=150 if a1==290
+		replace l5=112.5 if a1==313
+		replace l5=150 if a1==329
+		replace l5=0 if a1==459
+		replace l5=187.5 if a1==523
+		replace l7=262.5 if a1==135
+		replace l7=150 if a1==163
+		replace l7=150 if a1==180
+		replace l7=112.5 if a1==219
+		replace l7=112.5 if a1==253
+		replace l7=150 if a1==290
+		replace l7=112.5 if a1==313
+		replace l7=112.5 if a1==329
+		replace l7=0 if a1==459
+		replace l7=112.5 if a1==523		
+		replace l9=187.5 if a1==135
+		replace l9=150 if a1==163
+		replace l9=187.5 if a1==180
+		replace l9=262.5 if a1==219
+		replace l9=37.5 if a1==253
+		replace l9=225 if a1==290
+		replace l9=112.5 if a1==313
+		replace l9=187.5 if a1==329
+		replace l9=0 if a1==459
+		replace l9=150.5 if a1==523		
+		replace l11=187.5 if a1==135
+		replace l11=150 if a1==163
+		replace l11=262.5 if a1==180
+		replace l11=300 if a1==219
+		replace l11=75 if a1==253
+		replace l11=187.5 if a1==290
+		replace l11=112.5 if a1==313
+		replace l11=187.5 if a1==329
+		replace l11=0 if a1==459
+		replace l11=0 if a1==523	
+		duplicates drop	
+
+	/*Se genera una variable para el promedio enviado por el jugador 1 y a 
+	partir de eso se hacen cortes*/
+		gen promedioenviadoj1=((l5+l7+l9+l11)/4) if l0==1
+		gen promedioenviadoj1_rango=1 if (promedioenviadoj1<=112.5)
+		replace promedioenviadoj1_rango=2 if (promedioenviadoj1>112.5 & promedioenviadoj1<=187.5)
+		replace promedioenviadoj1_rango=3 if (promedioenviadoj1>187.5)
+		replace promedioenviadoj1_rango=. if (promedioenviadoj1==.)
+		tab promedioenviadoj1_rango
+		
+	/* Nestor: 	
+		keep promedioenviadoj1
+		save promedioenviadoj1
+	*/
+
+*2-Porcentajes enviados*
+*2.1-Porcentaje promedio j1*
+		gen porcentajepromenviadoj1=((l5+l7+l9+l11)/1200) if l0==1
+		sum porcentajepromenviadoj1
+
+		replace l0=2 if l0==.
+
+
+*VOLVER A VER*
+*2.2-Porcentaje promedio j2*
+*El 1ª número despues del guión bajo refiere a la ronda y el 2ª a la pregunta dentro de la ronda*
+*El porcentaje enviado no puede ser mayor a 1 siguiendo crieterios usados en 20007*
+*El porcentaje es sobre lo que tiene J2 para repartir (lo que le envían+lo suyo)*
+		gen porcentajepromenviadoj2_11=(l13/300) if l0==2  
+		replace porcentajepromenviadoj2_11=1 if (porcentajepromenviadoj2_11>1 & porcentajepromenviadoj2_11!=.)
+		gen porcentajepromenviadoj2_12=(l14/525) if l0==2
+		replace porcentajepromenviadoj2_12=1 if (porcentajepromenviadoj2_12>1 & porcentajepromenviadoj2_12!=.)
+		gen porcentajepromenviadoj2_13=(l15/750) if l0==2
+		replace porcentajepromenviadoj2_13=1 if (porcentajepromenviadoj2_13>1 & porcentajepromenviadoj2_13!=.)
+		gen porcentajepromenviadoj2_14=(l16/975) if l0==2
+		replace porcentajepromenviadoj2_14=1 if (porcentajepromenviadoj2_14>1 & porcentajepromenviadoj2_14!=.)
+		gen porcentajepromenviadoj2_15=(l17/1200) if l0==2
+		replace porcentajepromenviadoj2_15=1 if (porcentajepromenviadoj2_15>1 & porcentajepromenviadoj2_15!=.)
+
+
+		sum porcentajepromenviadoj2_12 porcentajepromenviadoj2_13 porcentajepromenviadoj2_14 porcentajepromenviadoj2_15
+
+		gen porcentajepromenviadoj2_21=(l19/300) if l0==2  
+		replace porcentajepromenviadoj2_21=1 if (porcentajepromenviadoj2_21>1 & porcentajepromenviadoj2_21!=.)
+		gen porcentajepromenviadoj2_22=((l20)/525) if l0==2
+		replace porcentajepromenviadoj2_22=1 if (porcentajepromenviadoj2_22>1 & porcentajepromenviadoj2_22!=.)
+		gen porcentajepromenviadoj2_23=(l21/750) if l0==2
+		replace porcentajepromenviadoj2_23=1 if (porcentajepromenviadoj2_23>1 & porcentajepromenviadoj2_23!=.)
+		gen porcentajepromenviadoj2_24=(l22/975) if l0==2
+		replace porcentajepromenviadoj2_24=1 if (porcentajepromenviadoj2_24>1 & porcentajepromenviadoj2_24!=.)
+		gen porcentajepromenviadoj2_25=(l23/1200) if l0==2
+		replace porcentajepromenviadoj2_25=1 if (porcentajepromenviadoj2_25>1 & porcentajepromenviadoj2_25!=.)
+		sum porcentajepromenviadoj2_22 porcentajepromenviadoj2_23 porcentajepromenviadoj2_24 porcentajepromenviadoj2_25
+
+
+		*ver duda matematica*
+		gen porcentajepromenviadoj2_31=(l19/300) if l0==2  
+		replace porcentajepromenviadoj2_31=1 if (porcentajepromenviadoj2_31>1 & porcentajepromenviadoj2_31!=.)
+		gen porcentajepromenviadoj2_32=((l26)/525) if l0==2
+		replace porcentajepromenviadoj2_32=1 if (porcentajepromenviadoj2_32>1 & porcentajepromenviadoj2_32!=.)
+		gen porcentajepromenviadoj2_33=(l27/750) if l0==2
+		replace porcentajepromenviadoj2_33=1 if (porcentajepromenviadoj2_33>1 & porcentajepromenviadoj2_33!=.)
+		gen porcentajepromenviadoj2_34=(l28/975) if l0==2
+		replace porcentajepromenviadoj2_34=1 if (porcentajepromenviadoj2_34>1 & porcentajepromenviadoj2_34!=.)
+		gen porcentajepromenviadoj2_35=(l29/1200) if l0==2
+		replace porcentajepromenviadoj2_35=1 if (porcentajepromenviadoj2_35>1 & porcentajepromenviadoj2_35!=.)
+
+		gen porcentajepromenviadoj2_41=(l19/300) if l0==2  
+		replace porcentajepromenviadoj2_41=1 if (porcentajepromenviadoj2_41>1 & porcentajepromenviadoj2_41!=.)
+		gen porcentajepromenviadoj2_42=((l32)/525) if l0==2
+		replace porcentajepromenviadoj2_42=1 if (porcentajepromenviadoj2_42>1 & porcentajepromenviadoj2_42!=.)
+		gen porcentajepromenviadoj2_43=(l33/750) if l0==2
+		replace porcentajepromenviadoj2_43=1 if (porcentajepromenviadoj2_43>1 & porcentajepromenviadoj2_43!=.)
+		gen porcentajepromenviadoj2_44=(l34/975) if l0==2
+		replace porcentajepromenviadoj2_44=1 if (porcentajepromenviadoj2_44>1 & porcentajepromenviadoj2_44!=.)
+		gen porcentajepromenviadoj2_45=(l35/1200) if l0==2
+		replace porcentajepromenviadoj2_45=1 if (porcentajepromenviadoj2_45>1 & porcentajepromenviadoj2_45!=.)
+
+		sum porcentajepromenviadoj2_32 porcentajepromenviadoj2_33 porcentajepromenviadoj2_34 porcentajepromenviadoj2_35
+		sum porcentajepromenviadoj2_42 porcentajepromenviadoj2_43 porcentajepromenviadoj2_44 porcentajepromenviadoj2_45
+
+		gen porcentajepromenviadoj2= ((porcentajepromenviadoj2_12 + porcentajepromenviadoj2_13 + porcentajepromenviadoj2_14 + porcentajepromenviadoj2_15 + porcentajepromenviadoj2_22 + porcentajepromenviadoj2_23 + porcentajepromenviadoj2_24 + porcentajepromenviadoj2_25 +porcentajepromenviadoj2_32 + porcentajepromenviadoj2_33 + porcentajepromenviadoj2_34 + porcentajepromenviadoj2_35 + porcentajepromenviadoj2_42 + porcentajepromenviadoj2_43 + porcentajepromenviadoj2_44 + porcentajepromenviadoj2_45)/16)
+		sum porcentajepromenviadoj2
+		tab porcentajepromenviadoj2
+
+				gen promedioenviadoj2_rango=1 if (porcentajepromenviadoj2<=0.2608946 )
+				replace promedioenviadoj2_rango=2 if (porcentajepromenviadoj2>0.2608946 & porcentajepromenviadoj2<=0.3708104  )
+				replace promedioenviadoj2_rango=3 if (porcentajepromenviadoj2>0.3708104 )
+				replace promedioenviadoj2_rango=. if (porcentajepromenviadoj2==.)
+				tab promedioenviadoj2_rango
+
+		gen promedioenviadorango= promedioenviadoj1_rango if promedioenviadoj1_rango!=.
+		replace promedioenviadorango=promedioenviadoj2_rango  if promedioenviadorango==.
+		gen promedioenviado= porcentajepromenviadoj1 if l0==1
+		replace promedioenviado= porcentajepromenviadoj2 if l0==2
+		
+*CONFIANZA*
+		*Confianza en instituciones*
+		sum ci1
+			sum ci1 if genero==1
+			sum ci1 if genero==2
+			sum ci1 if edad1832==1
+			sum ci1 if edad3349==1
+			sum ci1 if edad50==1
+			sum ci1 if secundariaincompleta==1
+			sum ci1 if secundariacompleta==1
+			sum ci1 if universitario==1
+			sum ci1 if b1==1
+			sum ci1 if b1!=1
+			sum ci1 if (b1==2 | b1==3)
+			sum ci1 if promedioenviadoj1_rango==1
+			sum ci1 if promedioenviadoj1_rango==2
+			sum ci1 if promedioenviadoj1_rango==3
+			sum ci1 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci1 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci1 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		sum ci2
+			sum ci2 if genero==1
+			sum ci2 if genero==2
+			sum ci2 if edad1832==1
+			sum ci2 if edad3349==1
+			sum ci2 if edad50==1
+			sum ci2 if secundariaincompleta==1
+			sum ci2 if secundariacompleta==1
+			sum ci2 if universitario==1
+			sum ci2 if b1==1
+			sum ci2 if b1!=1
+			sum ci2 if (b1==2 | b1==3)
+			sum ci2 if promedioenviadoj1_rango==1
+			sum ci2 if promedioenviadoj1_rango==2
+			sum ci2 if promedioenviadoj1_rango==3
+			sum ci2 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci2 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci2 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)		
+
+		sum ci3
+			sum ci3 if genero==2	
+			sum ci3 if genero==1
+			sum ci3 if edad1832==1
+			sum ci3 if edad3349==1
+			sum ci3 if edad50==1
+			sum ci3 if secundariaincompleta==1
+			sum ci3 if secundariacompleta==1
+			sum ci3 if universitario==1
+			sum ci3 if b1==1
+			sum ci3 if b1!=1
+			sum ci3 if (b1==2 | b1==3)
+			sum ci3 if promedioenviadoj1_rango==1
+			sum ci3 if promedioenviadoj1_rango==2
+			sum ci3 if promedioenviadoj1_rango==3
+			sum ci3 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci3 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci3 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		sum ci4
+			sum ci4 if genero==2	
+			sum ci4 if genero==1
+			sum ci4 if edad1832==1
+			sum ci4 if edad3349==1
+			sum ci4 if edad50==1
+			sum ci4 if secundariaincompleta==1
+			sum ci4 if secundariacompleta==1
+			sum ci4 if universitario==1
+			sum ci4 if b1==1
+			sum ci4 if b1!=1
+			sum ci4 if (b1==2 | b1==3)	
+			sum ci4 if promedioenviadoj1_rango==1
+			sum ci4 if promedioenviadoj1_rango==2
+			sum ci4 if promedioenviadoj1_rango==3
+			sum ci4 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci4 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci4 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		sum ci5
+			sum ci5 if genero==2	
+			sum ci5 if genero==1
+			sum ci5 if edad1832==1
+			sum ci5 if edad3349==1
+			sum ci5 if edad50==1
+			sum ci5 if secundariaincompleta==1
+			sum ci5 if secundariacompleta==1
+			sum ci5 if universitario==1
+			sum ci5 if b1==1
+			sum ci5 if b1!=1
+			sum ci5 if (b1==2 | b1==3)
+			sum ci5 if promedioenviadoj1_rango==1
+			sum ci5 if promedioenviadoj1_rango==2
+			sum ci5 if promedioenviadoj1_rango==3
+			sum ci5 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci5 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci5 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+
+		sum ci6
+			sum ci6 if genero==2	
+			sum ci6 if genero==1
+			sum ci6 if edad1832==1
+			sum ci6 if edad3349==1
+			sum ci6 if edad50==1
+			sum ci6 if secundariaincompleta==1
+			sum ci6 if secundariacompleta==1
+			sum ci6 if universitario==1
+			sum ci6 if b1==1
+			sum ci6 if b1!=1
+			sum ci6 if (b1==2 | b1==3)
+			sum ci6 if promedioenviadoj1_rango==1
+			sum ci6 if promedioenviadoj1_rango==2
+			sum ci6 if promedioenviadoj1_rango==3
+			sum ci6 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci6 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci6 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)
+
+		sum ci7
+			sum ci7 if genero==2	
+			sum ci7 if genero==1
+			sum ci7 if edad1832==1
+			sum ci7 if edad3349==1
+			sum ci7 if edad50==1
+			sum ci7 if secundariaincompleta==1
+			sum ci7 if secundariacompleta==1
+			sum ci7 if universitario==1
+			sum ci7 if b1==1
+			sum ci7 if b1!=1
+			sum ci7 if (b1==2 | b1==3)
+			sum ci7 if promedioenviadoj1_rango==1
+			sum ci7 if promedioenviadoj1_rango==2
+			sum ci7 if promedioenviadoj1_rango==3
+			sum ci7 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci7 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci7 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		sum ci8
+			sum ci8 if genero==2	
+			sum ci8 if genero==1
+			sum ci8 if edad1832==1
+			sum ci8 if edad3349==1
+			sum ci8 if edad50==1
+			sum ci8 if secundariaincompleta==1
+			sum ci8 if secundariacompleta==1
+			sum ci8 if universitario==1
+			sum ci8 if b1==1
+			sum ci8 if b1!=1
+			sum ci8 if (b1==2 | b1==3)
+			sum ci8 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci8 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci8 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		sum ci9
+			sum ci9 if genero==2	
+			sum ci9 if genero==1
+			sum ci9 if edad1832==1
+			sum ci9 if edad3349==1
+			sum ci9 if edad50==1
+			sum ci9 if secundariaincompleta==1
+			sum ci9 if secundariacompleta==1
+			sum ci9 if universitario==1
+			sum ci9 if b1==1
+			sum ci9 if b1!=1
+			sum ci9 if (b1==2 | b1==3)		
+			sum ci9 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci9 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci9 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		sum ci10
+			sum ci10 if genero==2	
+			sum ci10 if genero==1
+			sum ci10 if edad1832==1
+			sum ci10 if edad3349==1
+			sum ci10 if edad50==1
+			sum ci10 if secundariaincompleta==1
+			sum ci10 if secundariacompleta==1
+			sum ci10 if universitario==1
+			sum ci10 if b1==1
+			sum ci10 if b1!=1
+			sum ci10 if (b1==2 | b1==3)
+			sum ci10 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci10 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci10 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)		
+
+		sum ci11
+			sum ci11 if genero==2	
+			sum ci11 if genero==1
+			sum ci11 if edad1832==1
+			sum ci11 if edad3349==1
+			sum ci11 if edad50==1
+			sum ci11 if secundariaincompleta==1
+			sum ci11 if secundariacompleta==1
+			sum ci11 if universitario==1
+			sum ci11 if b1==1
+			sum ci11 if b1!=1
+			sum ci11 if (b1==2 | b1==3)
+			sum ci11 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci11 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci11 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)		
+
+		sum ci12
+			sum ci12 if genero==2	
+			sum ci12 if genero==1
+			sum ci12 if edad1832==1
+			sum ci12 if edad3349==1
+			sum ci12 if edad50==1
+			sum ci12 if secundariaincompleta==1
+			sum ci12 if secundariacompleta==1
+			sum ci12 if universitario==1
+			sum ci12 if b1==1
+			sum ci12 if b1!=1
+			sum ci12 if (b1==2 | b1==3)
+			sum ci12 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci12 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci12 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		sum ci13
+			sum ci13 if genero==2	
+			sum ci13 if genero==1
+			sum ci13 if edad1832==1
+			sum ci13 if edad3349==1
+			sum ci13 if edad50==1
+			sum ci13 if secundariaincompleta==1
+			sum ci13 if secundariacompleta==1
+			sum ci13 if universitario==1
+			sum ci13 if b1==1
+			sum ci13 if b1!=1
+			sum ci13 if (b1==2 | b1==3)
+			sum ci13 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci13 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci13 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)		
+
+		sum ci14
+			sum ci14 if genero==2	
+			sum ci14 if genero==1
+			sum ci14 if edad1832==1
+			sum ci14 if edad3349==1
+			sum ci14 if edad50==1
+			sum ci14 if secundariaincompleta==1
+			sum ci14 if secundariacompleta==1
+			sum ci14 if universitario==1
+			sum ci14 if b1==1
+			sum ci14 if b1!=1
+			sum ci14 if (b1==2 | b1==3)
+			sum ci14 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci14 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci14 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)
+
+		sum ci15 
+			sum ci15 if genero==2	
+			sum ci15 if genero==1
+			sum ci15 if edad1832==1
+			sum ci15 if edad3349==1
+			sum ci15 if edad50==1
+			sum ci15 if secundariaincompleta==1
+			sum ci15 if secundariacompleta==1
+			sum ci15 if universitario==1
+			sum ci15 if b1==1
+			sum ci15 if b1!=1
+			sum ci15 if (b1==2 | b1==3)
+			sum ci15 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci15 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci15 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		sum ci16 
+			sum ci16 if genero==2	
+			sum ci16 if genero==1
+			sum ci16 if edad1832==1
+			sum ci16 if edad3349==1
+			sum ci16 if edad50==1
+			sum ci16 if secundariaincompleta==1
+			sum ci16 if secundariacompleta==1
+			sum ci16 if universitario==1
+			sum ci16 if b1==1
+			sum ci16 if b1!=1
+			sum ci16 if (b1==2 | b1==3)
+			sum ci16 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci16 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci16 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		sum ci17 
+			sum ci17 if genero==2	
+			sum ci17 if genero==1
+			sum ci17 if edad1832==1
+			sum ci17 if edad3349==1
+			sum ci17 if edad50==1
+			sum ci17 if secundariaincompleta==1
+			sum ci17 if secundariacompleta==1
+			sum ci17 if universitario==1
+			sum ci17 if b1==1
+			sum ci17 if b1!=1
+			sum ci17 if (b1==2 | b1==3)
+			sum ci17 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum ci17 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum ci17 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+
+
+		*Confianza interpersonal*
+		sum cp1
+			sum cp1 if genero==2	
+			sum cp1 if genero==1
+			sum cp1 if edad1832==1
+			sum cp1 if edad3349==1
+			sum cp1 if edad50==1
+			sum cp1 if secundariaincompleta==1
+			sum cp1 if secundariacompleta==1
+			sum cp1 if universitario==1
+			sum cp1 if b1==1
+			sum cp1 if b1!=1
+			sum cp1 if (b1==2 | b1==3)
+			sum cp1 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum cp1 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum cp1 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)			
+
+			
+		sum cp2
+			sum cp2 if genero==2	
+			sum cp2 if genero==1
+			sum cp2 if edad1832==1
+			sum cp2 if edad3349==1
+			sum cp2 if edad50==1
+			sum cp2 if secundariaincompleta==1
+			sum cp2 if secundariacompleta==1
+			sum cp2 if universitario==1
+			sum cp2 if b1==1
+			sum cp2 if b1!=1
+			sum cp2 if (b1==2 | b1==3)
+			sum cp2 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum cp2 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum cp2 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)			
+
+
+		sum cp3
+			sum cp3 if genero==2	
+			sum cp3 if genero==1
+			sum cp3 if edad1832==1
+			sum cp3 if edad3349==1
+			sum cp3 if edad50==1
+			sum cp3 if secundariaincompleta==1
+			sum cp3 if secundariacompleta==1
+			sum cp3 if universitario==1
+			sum cp3 if b1==1
+			sum cp3 if b1!=1
+			sum cp3 if (b1==2 | b1==3)
+			sum cp3 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum cp3 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum cp3 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)		
+
+
+		sum cp4
+			sum cp4 if genero==2	
+			sum cp4 if genero==1
+			sum cp4 if edad1832==1
+			sum cp4 if edad3349==1
+			sum cp4 if edad50==1
+			sum cp4 if secundariaincompleta==1
+			sum cp4 if secundariacompleta==1
+			sum cp4 if universitario==1
+			sum cp4 if b1==1
+			sum cp4 if b1!=1
+			sum cp4 if (b1==2 | b1==3)
+			sum cp4 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum cp4 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum cp4 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)
+
+
+		sum cp5
+			sum cp5 if genero==2	
+			sum cp5 if genero==1
+			sum cp5 if edad1832==1
+			sum cp5 if edad3349==1
+			sum cp5 if edad50==1
+			sum cp5 if secundariaincompleta==1
+			sum cp5 if secundariacompleta==1
+			sum cp5 if universitario==1
+			sum cp5 if b1==1
+			sum cp5 if b1!=1
+			sum cp5 if (b1==2 | b1==3)
+			sum cp5 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum cp5 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum cp5 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)			
+
+ 
+		*Confianza en general*
+		sum cg1
+			sum cg1 if genero==2	
+			sum cg1 if genero==1
+			sum cg1 if edad1832==1
+			sum cg1 if edad3349==1
+			sum cg1 if edad50==1
+			sum cg1 if secundariaincompleta==1
+			sum cg1 if secundariacompleta==1
+			sum cg1 if universitario==1
+			sum cg1 if b1==1
+			sum cg1 if b1!=1
+			sum cg1 if (b1==2 | b1==3)
+			sum cg1 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum cg1 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum cg1 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)			
+		sum cg2
+			sum cg2 if genero==2	
+			sum cg2 if genero==1
+			sum cg2 if edad1832==1
+			sum cg2 if edad3349==1
+			sum cg2 if edad50==1
+			sum cg2 if secundariaincompleta==1
+			sum cg2 if secundariacompleta==1
+			sum cg2 if universitario==1
+			sum cg2 if b1==1
+			sum cg2 if b1!=1
+			sum cg2 if (b1==2 | b1==3)
+			sum cg2 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			sum cg2 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			sum cg2 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)			
+	tab cg3
+			tab cg3 if genero==2	
+			tab cg3 if genero==1
+			tab cg3 if edad1832==1
+			tab cg3 if edad3349==1
+			tab cg3 if edad50==1
+			tab cg3 if secundariaincompleta==1
+			tab cg3 if secundariacompleta==1
+			tab cg3 if universitario==1
+			tab cg3 if b1==1
+			tab cg3 if b1!=1
+			tab cg3 if (b1==2 | b1==3)
+			tab cg3 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg3 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg3 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg4
+			tab cg4 if genero==2	
+			tab cg4 if genero==1
+			tab cg4 if edad1832==1
+			tab cg4 if edad3349==1
+			tab cg4 if edad50==1
+			tab cg4 if secundariaincompleta==1
+			tab cg4 if secundariacompleta==1
+			tab cg4 if universitario==1
+			tab cg4 if b1==1
+			tab cg4 if b1!=1
+			tab cg4 if (b1==2 | b1==3)
+			tab cg4 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg4 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg4 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg5
+			tab cg5 if genero==2	
+			tab cg5 if genero==1
+			tab cg5 if edad1832==1
+			tab cg5 if edad3349==1
+			tab cg5 if edad50==1
+			tab cg5 if secundariaincompleta==1
+			tab cg5 if secundariacompleta==1
+			tab cg5 if universitario==1
+			tab cg5 if b1==1
+			tab cg5 if b1!=1
+			tab cg5 if (b1==2 | b1==3)
+			tab cg5 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg5 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg5 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg6
+			tab cg6 if genero==2	
+			tab cg6 if genero==1
+			tab cg6 if edad1832==1
+			tab cg6 if edad3349==1
+			tab cg6 if edad50==1
+			tab cg6 if secundariaincompleta==1
+			tab cg6 if secundariacompleta==1
+			tab cg6 if universitario==1
+			tab cg6 if b1==1
+			tab cg6 if b1!=1
+			tab cg6 if (b1==2 | b1==3)
+			tab cg6 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg6 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg6 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg7
+			tab cg7 if genero==2	
+			tab cg7 if genero==1
+			tab cg7 if edad1832==1
+			tab cg7 if edad3349==1
+			tab cg7 if edad50==1
+			tab cg7 if secundariaincompleta==1
+			tab cg7 if secundariacompleta==1
+			tab cg7 if universitario==1
+			tab cg7 if b1==1
+			tab cg7 if b1!=1
+			tab cg7 if (b1==2 | b1==3)
+			tab cg7 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg7 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg7 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg8
+			tab cg8 if genero==2	
+			tab cg8 if genero==1
+			tab cg8 if edad1832==1
+			tab cg8 if edad3349==1
+			tab cg8 if edad50==1
+			tab cg8 if secundariaincompleta==1
+			tab cg8 if secundariacompleta==1
+			tab cg8 if universitario==1
+			tab cg8 if b1==1
+			tab cg8 if b1!=1
+			tab cg8 if (b1==2 | b1==3)
+			tab cg8 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg8 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg8 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg9
+			tab cg9 if genero==2	
+			tab cg9 if genero==1
+			tab cg9 if edad1832==1
+			tab cg9 if edad3349==1
+			tab cg9 if edad50==1
+			tab cg9 if secundariaincompleta==1
+			tab cg9 if secundariacompleta==1
+			tab cg9 if universitario==1
+			tab cg9 if b1==1
+			tab cg9 if b1!=1
+			tab cg9 if (b1==2 | b1==3)
+			tab cg9 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg9 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg9 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg10
+			tab cg10 if genero==2	
+			tab cg10 if genero==1
+			tab cg10 if edad1832==1
+			tab cg10 if edad3349==1
+			tab cg10 if edad50==1
+			tab cg10 if secundariaincompleta==1
+			tab cg10 if secundariacompleta==1
+			tab cg10 if universitario==1
+			tab cg10 if b1==1
+			tab cg10 if b1!=1
+			tab cg10 if (b1==2 | b1==3)
+			tab cg10 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg10 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg10 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+			
+		tab cg11
+			tab cg11 if genero==2	
+			tab cg11 if genero==1
+			tab cg11 if edad1832==1
+			tab cg11 if edad3349==1
+			tab cg11 if edad50==1
+			tab cg11 if secundariaincompleta==1
+			tab cg11 if secundariacompleta==1
+			tab cg11 if universitario==1
+			tab cg11 if b1==1
+			tab cg11 if b1!=1
+			tab cg11 if (b1==2 | b1==3)
+			tab cg11 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg11 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg11 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg12
+			tab cg12 if genero==2	
+			tab cg12 if genero==1
+			tab cg12 if edad1832==1
+			tab cg12 if edad3349==1
+			tab cg12 if edad50==1
+			tab cg12 if secundariaincompleta==1
+			tab cg12 if secundariacompleta==1
+			tab cg12 if universitario==1
+			tab cg12 if b1==1
+			tab cg12 if b1!=1
+			tab cg12 if (b1==2 | b1==3)
+			tab cg12 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg12 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg12 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg13
+			tab cg13 if genero==2	
+			tab cg13 if genero==1
+			tab cg13 if edad1832==1
+			tab cg13 if edad3349==1
+			tab cg13 if edad50==1
+			tab cg13 if secundariaincompleta==1
+			tab cg13 if secundariacompleta==1
+			tab cg13 if universitario==1
+			tab cg13 if b1==1
+			tab cg13 if b1!=1
+			tab cg13 if (b1==2 | b1==3)
+			tab cg13 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg13 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg13 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg14
+			tab cg14 if genero==2	
+			tab cg14 if genero==1
+			tab cg14 if edad1832==1
+			tab cg14 if edad3349==1
+			tab cg14 if edad50==1
+			tab cg14 if secundariaincompleta==1
+			tab cg14 if secundariacompleta==1
+			tab cg14 if universitario==1
+			tab cg14 if b1==1
+			tab cg14 if b1!=1
+			tab cg14 if (b1==2 | b1==3)
+			tab cg14 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg14 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg14 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg15
+			tab cg15 if genero==2	
+			tab cg15 if genero==1
+			tab cg15 if edad1832==1
+			tab cg15 if edad3349==1
+			tab cg15 if edad50==1
+			tab cg15 if secundariaincompleta==1
+			tab cg15 if secundariacompleta==1
+			tab cg15 if universitario==1
+			tab cg15 if b1==1
+			tab cg15 if b1!=1
+			tab cg15 if (b1==2 | b1==3)
+			tab cg15 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg15 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg15 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg16
+			tab cg16 if genero==2	
+			tab cg16 if genero==1
+			tab cg16 if edad1832==1
+			tab cg16 if edad3349==1
+			tab cg16 if edad50==1
+			tab cg16 if secundariaincompleta==1
+			tab cg16 if secundariacompleta==1
+			tab cg16 if universitario==1
+			tab cg16 if b1==1
+			tab cg16 if b1!=1
+			tab cg16 if (b1==2 | b1==3)
+			tab cg16 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg16 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg16 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg17
+			tab cg17 if genero==2	
+			tab cg17 if genero==1
+			tab cg17 if edad1832==1
+			tab cg17 if edad3349==1
+			tab cg17 if edad50==1
+			tab cg17 if secundariaincompleta==1
+			tab cg17 if secundariacompleta==1
+			tab cg17 if universitario==1
+			tab cg17 if b1==1
+			tab cg17 if b1!=1
+			tab cg17 if (b1==2 | b1==3)
+			tab cg17 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg17 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg17 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg18
+			tab cg18 if genero==2	
+			tab cg18 if genero==1
+			tab cg18 if edad1832==1
+			tab cg18 if edad3349==1
+			tab cg18 if edad50==1
+			tab cg18 if secundariaincompleta==1
+			tab cg18 if secundariacompleta==1
+			tab cg18 if universitario==1
+			tab cg18 if b1==1
+			tab cg18 if b1!=1
+			tab cg18 if (b1==2 | b1==3)
+			tab cg18 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg18 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg18 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		
+		tab cg19
+			tab cg19 if genero==2	
+			tab cg19 if genero==1
+			tab cg19 if edad1832==1
+			tab cg19 if edad3349==1
+			tab cg19 if edad50==1
+			tab cg19 if secundariaincompleta==1
+			tab cg19 if secundariacompleta==1
+			tab cg19 if universitario==1
+			tab cg19 if b1==1
+			tab cg19 if b1!=1
+			tab cg19 if (b1==2 | b1==3)
+			tab cg19 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg19 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg19 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+		tab cg20
+			tab cg20 if genero==2	
+			tab cg20 if genero==1
+			tab cg20 if edad1832==1
+			tab cg20 if edad3349==1
+			tab cg20 if edad50==1
+			tab cg20 if secundariaincompleta==1
+			tab cg20 if secundariacompleta==1
+			tab cg20 if universitario==1
+			tab cg20 if b1==1
+			tab cg20 if b1!=1
+			tab cg20 if (b1==2 | b1==3)
+			tab cg20 if (promedioenviadoj1_rango==1 | promedioenviadoj2_rango==1)
+			tab cg20 if (promedioenviadoj1_rango==2 | promedioenviadoj2_rango==2)
+			tab cg20 if (promedioenviadoj1_rango==3 | promedioenviadoj2_rango==3)	
+
+			/*Vemos cuantos eligen no contestar algúnas de las preguntas cg3-cg20*/
+			gen nocontestacg3cg20=1 if (cg7 == 5 | cg4 == 5 | cg3 == 5 | cg8 == 5 | cg5 == 5 | cg6 == 5 | cg13 == 5 | cg10 == 5 | cg9 == 5 | cg14 == 5 | cg11 == 5 | cg12 == 5 | cg19 == 5 | cg16 == 5 | cg15 == 5 | cg20 == 5 | cg17 == 5 | cg18 == 5)
+	
+	
+
+*VEMOS CORRELACIONES POR GRUPO*
+	*-Confianza insititional*
+	replace ci1=0 if ci1==.
+	replace ci2=0 if ci2==.
+	replace ci3=0 if ci3==.
+	replace ci4=0 if ci4==.
+	replace ci5=0 if ci5==.	
+	replace ci6=0 if ci6==.
+	replace ci7=0 if ci7==.	
+	replace ci8=0 if ci8==.
+	replace ci9=0 if ci9==.
+	replace ci10=0 if ci10==.
+	replace ci11=0 if ci11==.
+	replace ci12=0 if ci12==.	
+	replace ci13=0 if ci13==.	
+	replace ci14=0 if ci14==.	
+	replace ci15=0 if ci15==.
+	replace ci16=0 if ci16==.
+	replace ci17=0 if ci17==.
+	gen promconfinst= (ci1+ci2+ci3+ci4+ci5+ci6+ci7+ci8+ci9+ci10+ci11+ci12+ci13+ci14+ci15+ci16+ci17)/17
+	*-Confianza interpersonal*
+	replace cp1=0 if cp1==.
+	replace cp2=0 if cp2==.
+	replace cp3=0 if cp3==.
+	replace cp4=0 if cp4==.
+	replace cp5=0 if cp5==.
+	gen promconfinterpersonal=  (cp1+cp2+cp3+cp4+cp5)/5
+	*-Confianza en general*
+	replace cg1=0 if cg1==.
+	replace cg2=0 if cg2==.
+	replace cg3=0 if cg3==.
+	replace cg4=0 if cg4==.
+	replace cg5=0 if cg5==.	
+	replace cg6=0 if cg6==.
+	replace cg7=0 if cg7==.	
+	replace cg8=0 if cg8==.
+	replace cg9=0 if cg9==.
+	replace cg10=0 if cg10==.
+	replace cg11=0 if cg11==.
+	replace cg12=0 if cg12==.	
+	replace cg13=0 if cg13==.	
+	replace cg14=0 if cg14==.	
+	replace cg15=0 if cg15==.
+	replace cg16=0 if cg16==.
+	replace cg17=0 if cg17==.
+	replace cg18=0 if cg18==.
+	replace cg19=0 if cg19==.
+	replace cg20=0 if cg20==.
+	gen promconfgeneral= (cg1+cg2+cg3+cg4+cg5+cg6+cg7+cg8+cg9+cg10+cg11+cg12+cg13+cg14+cg15+cg16+cg17+cg18+cg19+cg20)/20
+
+	*pwcorr promedioenviadorango promconfgeneral promconfinterpersonal promconfinst, sig*
+	*pwcorr  promedioenviadorango cg1 cg2 cg3 cg4 cg5 cg6 cg7 cg8 cg9 cg10 cg11 cg12 cg13 cg14 cg15 cg16 cg17 cg18 cg19 cg20 cp1 cp2 cp3 cp4 cp5 ci1 ci2 ci3 ci4 ci5 ci6 ci7 ci8 ci9 ci10 ci11 ci12 ci13 ci14 ci15 ci16 ci17, sig*
+	pwcorr promedioenviado cg1 cg2, sig
+	/*preserve
+	log using "pwcorr2.log", replace text
+	pwcorr promedioenviadorango promconfgeneral promconfinterpersonal promconfinst, sig
+	pwcorr  promedioenviadorango cg1 cg2 cg3 cg4 cg5 cg6 cg7 cg8 cg9 cg10 cg11 cg12 cg13 cg14 cg15 cg16 cg17 cg18 cg19 cg20 cp1 cp2 cp3 cp4 cp5 ci1 ci2 ci3 ci4 ci5 ci6 ci7 ci8 ci9 ci10 ci11 ci12 ci13 ci14 ci15 ci16 ci17, sig	
+	log clear
+	restore
+	*/
+
+*Se usó para el reporte a los participantes*	
+	tabstat promedioenviado, by(cg1) stats(mean, median, N)
+	tabstat promedioenviado, by(cg2) stats(mean, median, N)
+
+
+	gen promj1porcentaje = promedioenviadoj1/300
+	tabstat promj1porcentaje, by(genero) stat(mean sd)
+	tabstat promedioenviadoj1, stat(mean)
+ 	tabstat porcentajepromenviadoj2, by(genero) stat(mean sd)
+ 	tabstat porcentajepromenviadoj2, by(estratobajo) stat(mean sd)
+ 	tabstat porcentajepromenviadoj2, by(estratomedio) stat(mean sd)
+ 	tabstat porcentajepromenviadoj2, by(estratoalto) stat(mean sd)
+ 	tabstat porcentajepromenviadoj2, by(secundariacompleta) stat(mean sd)
+ 	tabstat porcentajepromenviadoj2, by(secundariaincompleta) stat(mean sd)
+ 	tabstat porcentajepromenviadoj2, by(universitario) stat(mean sd)
+	tabstat porcentajepromenviadoj2, by(edad1832) stat(mean sd)
+ 	tabstat porcentajepromenviadoj2, by(edad3349) stat(mean sd)
+ 	tabstat porcentajepromenviadoj2, by(edad50) stat(mean sd)
+		tabstat ret1 ret2 ret3 ret4 ret5, by(edad1832) stat(mean sd N)	
+
+	
+	gen ret1= ((porcentajepromenviadoj2_11 +  porcentajepromenviadoj2_21 + porcentajepromenviadoj2_31 + porcentajepromenviadoj2_41)/4)
+ 	gen ret2= ((porcentajepromenviadoj2_12 +  porcentajepromenviadoj2_22 + porcentajepromenviadoj2_32 + porcentajepromenviadoj2_42)/4)
+	gen ret3= ((porcentajepromenviadoj2_13 + porcentajepromenviadoj2_23 + porcentajepromenviadoj2_33 + porcentajepromenviadoj2_43)/4)
+	gen ret4= ((porcentajepromenviadoj2_14 + porcentajepromenviadoj2_24 + porcentajepromenviadoj2_34 + porcentajepromenviadoj2_44)/4)
+	gen ret5= ((porcentajepromenviadoj2_15 + porcentajepromenviadoj2_25 + porcentajepromenviadoj2_35 + porcentajepromenviadoj2_45)/4)
+	tabstat ret1 ret2 ret3 ret4 ret5, by(genero) stat(mean sd N)	
