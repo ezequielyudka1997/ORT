@@ -1,0 +1,905 @@
+/*Primero se trabaja solo con algunas áreas de interés para probar el código
+y verficar que el procedimiento fuese correcto. Para comprobar que así sea se
+comparo la base con una realizada por Matilde Pereira Elola llamada 
+"Panel_completo_areas.dta".
+Una vez procedido lo anterior, se pasa a trabajar con todas las áreas de Scopus*/
+
+*A-CON ÁREAS DE INTERÉS*
+		*1- CREACIÓN DE LA BASE*
+		/*Primero, y mediante un loop, se agarran las bases desde Excel. 
+		En el primer loop,se convierte cada Excel en un dta, se crean las variables year 
+		y area y por practicidad se renombran todas las variables en minúscula.
+		En el código entre ambos loops se guarda el dta del años 1996 de cada área
+		con un nuevo nombre (base_final_j, siendo j el área).
+		En el segundo loop se hace append de todas los años por área, obteniéndose
+		en un único archivo dta todos los años de cada área.
+		*/
+
+			drop _all
+			
+			*Se hace para las áreas de Economía y Finanzas*
+			foreach j in EconomicsEconometrics Finance EconEconometFinMiscella{
+				foreach i in 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020{
+					import excel "C:\Users\zequi\Desktop\ORT\Scimago\Mapas/`j'/scimagojr country rank `i'.xlsx", sheet("Sheet1") firstrow clear
+					gen	year=`i'
+					gen area="`j'"
+					rename *, lower
+					save "C:\Users\zequi\Desktop\ORT\Scimago\Mapas/`j'/scimagojr country rank `i'.dta", replace
+				}
+				
+				use "C:\Users\zequi\Desktop\ORT\Scimago\Mapas/`j'/scimagojr country rank 1996.dta", clear
+				save "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_`j'.dta", replace
+
+					
+				foreach i in 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020{
+					use "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_`j'.dta", clear
+					append using "C:\Users\zequi\Desktop\ORT\Scimago\Mapas/`j'/scimagojr country rank `i'.dta"
+					save "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_`j'.dta", replace
+				}
+				}
+
+			*Se hace para las áreas de Business, Management and Accounting*
+			clear
+			foreach j in Accounting BusIntMan BusManAccMiscella IndRel ManInfSyst ManTechInn Marketing OrgBehHRMan StratMan TourLeisHospMan {
+				foreach i in 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020{
+					import excel "C:\Users\zequi\Desktop\ORT\Scimago\Mapas/`j'/scimagojr country rank `i'.xlsx", sheet("Sheet1") firstrow clear
+					gen	year=`i'
+					gen area="`j'"
+					rename *, lower
+					save "C:\Users\zequi\Desktop\ORT\Scimago\Mapas/`j'/scimagojr country rank `i'.dta", replace
+				}
+				
+				use "C:\Users\zequi\Desktop\ORT\Scimago\Mapas/`j'/scimagojr country rank 1996.dta", clear
+				save "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_`j'.dta", replace
+
+					
+				foreach i in 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020{
+					use "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_`j'.dta", clear
+					append using "C:\Users\zequi\Desktop\ORT\Scimago\Mapas/`j'/scimagojr country rank `i'.dta"
+					save "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_`j'.dta", replace
+				}
+				}
+
+					*Verificamos que estén todos los años en todas las subcategorías*
+						clear
+						foreach j in EconomicsEconometrics Finance EconEconometFinMiscella Accounting BusIntMan BusManAccMiscella IndRel ManInfSyst ManTechInn Marketing OrgBehHRMan StratMan TourLeisHospMan {
+						use "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_`j'.dta", replace
+						tab year
+						}
+			
+			*Creamos el archivo final, en el que contamos con la información de todos
+			*los años y todas las áreas
+				clear
+				use "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_EconomicsEconometrics.dta", clear
+				save "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final.dta", replace
+				
+				*Append a todas las áreas*
+				foreach j in Finance EconEconometFinMiscella Accounting BusIntMan BusManAccMiscella IndRel ManInfSyst ManTechInn Marketing OrgBehHRMan StratMan TourLeisHospMan {
+				use "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final.dta", replace
+				append using "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_`j'.dta"
+				save "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final.dta", replace
+				}
+
+			*Reemplazamos los nombres de las áreas y se cambian los nombres de algúnos
+			*países que después dieron problemas al intentar unir esta base con la de
+			*Matilde
+				use "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final.dta", clear
+				replace area="Accounting" if area=="Accounting"
+				replace area="Business and International Management" if area=="BusIntMan"
+				replace area="Business, Management and Accounting (miscellaneous)" if area=="BusManAccMiscella"
+				replace area="Economics, Econometrics and Finance (miscellaneous)" if area=="EconEconometFinMiscella"
+				replace area="Economics and Econometrics" if area=="EconomicsEconometrics"
+				replace area="Finance" if area=="Finance"
+				replace area="Industrial Relations" if area=="IndRel"
+				replace area="Management Information Systems" if area=="ManInfSyst"
+				replace area="Management of Technology and Innovation" if area=="ManTechInn"
+				replace area="Marketing" if area=="Marketing"
+				replace area="Organizational Behavior and Human Resource Management" if area=="OrgBehHRMan"
+				replace area="Strategy and Management" if area=="StratMan"
+				replace area="Tourism, Leisure and Hospitality Management" if area=="TourLeisHospMan"
+				replace country="Haiti" if country=="Haïti"
+				replace country="Senegal" if country=="Senegal "
+				replace country="Philippines" if country=="Philippines "
+				replace country="Latvia" if country=="Latvia "
+				replace country="Cote dIvore" if country=="Côte d’Ivoire"
+				save "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final.dta", replace
+
+				
+		*2-COMPARACIÓN DE LA BASE CON LA DE MATILDE (se hicieron varias pruebas)*		
+				
+		*Creamos una versión del archivo donde hay datos hasta 2019 y solo quedan algunas
+		*variables. Este archivo después se lo compara con el de Matilde
+			clear
+			use "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final.dta", replace
+			drop if year==2020
+			keep country region year documents citations area
+			rename  documents documents_zequi
+			rename  citations citations_zequi
+			save "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_para comparar.dta", replace
+
+		*Traemos la base de Matilde y los comparamos*
+			clear
+			cd "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\Matilde"
+			use "Panel_completo_areas.dta",clear
+			rename *, lower
+			*Nos quedamos solo con las áreas de interés*
+			keep if area=="Accounting"  | area=="Business and International Management"  | area=="Business, Management and Accounting(miscellaneous)"  | area=="Economics, Econometrics and Finance (miscellaneous)"  | area=="Economics and Econometrics"  | area=="Finance"  | area=="Industrial Relations"  | area=="Management Information Systems"  | area=="Management of Technology and Innovation"  | area=="Marketing"  | area=="Organizational Behavior and Human Resource Management"  | area=="Strategy and Management"  | area=="Tourism, Leisure and Hospitality Management" 
+			*Sacamos aquellos que fueron creados por falta de datos*
+			drop if documents==0 & citabledocuments==. & citations==0
+			merge 1:1 country year area using "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_para comparar.dta"
+			*keep if _merge==2 |  _merge==1
+			*Vemos las diferencias en cantidad de citas y documentos*
+			gen dif_docs= documents_zequi - documents
+			gen dif_citas= citations_zequi - citations
+			
+
+			*export excel using "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_diferencias.xls", firstrow(variables)
+
+			*Nos enfocamos en las diferencias de merge*
+				*Analizamos los _merge==2*
+					clear
+					cd "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\Matilde"
+					use "Panel_completo_areas.dta",clear
+					rename *, lower
+					*Nos quedamos solo con las áreas de interés*
+					keep if area=="Accounting"  | area=="Business and International Management"  | area=="Business, Management and Accounting(miscellaneous)"  | area=="Economics, Econometrics and Finance (miscellaneous)"  | area=="Economics and Econometrics"  | area=="Finance"  | area=="Industrial Relations"  | area=="Management Information Systems"  | area=="Management of Technology and Innovation"  | area=="Marketing"  | area=="Organizational Behavior and Human Resource Management"  | area=="Strategy and Management"  | area=="Tourism, Leisure and Hospitality Management" 
+					*Sacamos aquellos que fueron creados por falta de datos*
+					drop if documents==0 & citabledocuments==. & citations==0
+					merge 1:1 country year area using "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_para comparar.dta"
+					keep if _merge==2
+					tab area
+					tab year
+					tab country
+					
+					*Se destaca la gran presencia de Business, Management and Accounting (miscellaneous)
+					*entonces buscamos que es lo que pasa en las bases con esta área
+							clear
+							cd "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\Matilde"
+							use "Panel_completo_areas.dta",clear
+							rename *, lower
+							*Nos quedamos solo con las áreas de interés*
+							keep if area=="Accounting"  | area=="Business and International Management"  | area=="Business, Management and Accounting(miscellaneous)"  | area=="Economics, Econometrics and Finance (miscellaneous)"  | area=="Economics and Econometrics"  | area=="Finance"  | area=="Industrial Relations"  | area=="Management Information Systems"  | area=="Management of Technology and Innovation"  | area=="Marketing"  | area=="Organizational Behavior and Human Resource Management"  | area=="Strategy and Management"  | area=="Tourism, Leisure and Hospitality Management" 
+							*Sacamos aquellos que fueron creados por falta de datos*
+							merge 1:1 country year area using "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_para comparar.dta"
+							drop _merge
+							keep if area=="Business, Management and Accounting(miscellaneous)"  
+							edit country year documents citations documents_zequi citations_zequi
+							edit if citations!=.
+							edit if documents!=.
+							
+								*Vemos que pasaría si faltara el área Business, Management and Accounting(miscellaneous)*
+								clear
+								cd "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\Matilde"
+								use "Panel_completo_areas.dta",clear
+								rename *, lower
+								*Nos quedamos solo con las áreas de interés*
+								keep if area=="Accounting"  | area=="Business and International Management"  | area=="Business, Management and Accounting(miscellaneous)"  | area=="Economics, Econometrics and Finance (miscellaneous)"  | area=="Economics and Econometrics"  | area=="Finance"  | area=="Industrial Relations"  | area=="Management Information Systems"  | area=="Management of Technology and Innovation"  | area=="Marketing"  | area=="Organizational Behavior and Human Resource Management"  | area=="Strategy and Management"  | area=="Tourism, Leisure and Hospitality Management" 
+								*Sacamos aquellos que fueron creados por falta de datos*
+								merge 1:1 country year area using "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_para comparar.dta"
+								tab _merge
+								drop if area=="Business, Management and Accounting(miscellaneous)"  
+								drop if documents==0 & citabledocuments==. & citations==0
+								tab _merge
+						
+			*Nos enfocamos en las diferencias en cantidad de documentos y citas*
+				clear
+				cd "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\Matilde"
+				use "Panel_completo_areas.dta",clear
+				rename *, lower
+				*Nos quedamos solo con las áreas de interés*
+				keep if area=="Accounting"  | area=="Business and International Management"  | area=="Business, Management and Accounting(miscellaneous)"  | area=="Economics, Econometrics and Finance (miscellaneous)"  | area=="Economics and Econometrics"  | area=="Finance"  | area=="Industrial Relations"  | area=="Management Information Systems"  | area=="Management of Technology and Innovation"  | area=="Marketing"  | area=="Organizational Behavior and Human Resource Management"  | area=="Strategy and Management"  | area=="Tourism, Leisure and Hospitality Management" 
+				*Sacamos aquellos que fueron creados por falta de datos*
+				drop if documents==0 & citabledocuments==. & citations==0
+				merge 1:1 country year area using "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_para comparar.dta"
+				*Nos quedamos solo con los que comparten ambas bases porque en los demás
+				*hay missings
+				keep if _merge==3
+				*Vemos las diferencias en cantidad de citas y documentos*
+				gen dif_docs= documents_zequi - documents
+				gen dif_citas= citations_zequi - citations
+				sort dif_docs
+				edit 
+				sort dif_citas
+				edit
+				edit if dif_docs!=0  | dif_citas!=0
+				*Con diferencia en cantidad de documentos*
+				tab area if dif_docs!=0 
+				tab year if dif_docs!=0 
+				tab country if dif_docs!=0 
+				*Con diferencia en cantidad de citas*
+				tab area if dif_citas!=0
+				tab year if dif_citas!=0
+				tab country if dif_citas!=0
+			
+		*Solo Uruguay*
+			clear
+			cd "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\Matilde"
+			use "Panel_completo_areas.dta",clear
+			rename *, lower
+			*Nos quedamos solo con las áreas de interés*
+			keep if area=="Accounting"  | area=="Business and International Management"  | area=="Business, Management and Accounting(miscellaneous)"  | area=="Economics, Econometrics and Finance (miscellaneous)"  | area=="Economics and Econometrics"  | area=="Finance"  | area=="Industrial Relations"  | area=="Management Information Systems"  | area=="Management of Technology and Innovation"  | area=="Marketing"  | area=="Organizational Behavior and Human Resource Management"  | area=="Strategy and Management"  | area=="Tourism, Leisure and Hospitality Management" 
+			*Sacamos aquellos que fueron creados por falta de datos*
+			drop if documents==0 & citabledocuments==. & citations==0
+			merge 1:1 country year area using "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_para comparar.dta"
+			*keep if _merge==2 |  _merge==1
+			*Vemos las diferencias en cantidad de citas y documentos*
+			gen dif_docs= documents_zequi - documents
+			gen dif_citas= citations_zequi - citations
+			keep if country=="Uruguay"
+			
+		*3-CORRELACIÓN ENTRE LA BASE CON LA DE MATILDE ("Panel_completo_areas.dta") Y 
+		*  LA DE ESTE ARCHIVO ("base_final_para comparar.dta")		
+		
+			*Correlación solo con _merge==3*
+				clear
+				cd "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Matilde"
+				use "Panel_completo_areas.dta",clear
+				rename *, lower
+				*Nos quedamos solo con las áreas de interés*
+				keep if area=="Accounting"  | area=="Business and International Management"  | area=="Business, Management and Accounting(miscellaneous)"  | area=="Economics, Econometrics and Finance (miscellaneous)"  | area=="Economics and Econometrics"  | area=="Finance"  | area=="Industrial Relations"  | area=="Management Information Systems"  | area=="Management of Technology and Innovation"  | area=="Marketing"  | area=="Organizational Behavior and Human Resource Management"  | area=="Strategy and Management"  | area=="Tourism, Leisure and Hospitality Management" 
+				*Sacamos aquellos que fueron creados por falta de datos*
+				drop if documents==0 & citabledocuments==. & citations==0
+				merge 1:1 country year area using "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_para comparar.dta"
+				keep if _merge==3
+				pwcorr documents documents_zequi
+			
+			*Correlación*
+				clear
+				cd "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\Matilde"
+				use "Panel_completo_areas.dta",clear
+				rename *, lower
+				*Nos quedamos solo con las áreas de interés*
+				keep if area=="Accounting"  | area=="Business and International Management"  | area=="Business, Management and Accounting(miscellaneous)"  | area=="Economics, Econometrics and Finance (miscellaneous)"  | area=="Economics and Econometrics"  | area=="Finance"  | area=="Industrial Relations"  | area=="Management Information Systems"  | area=="Management of Technology and Innovation"  | area=="Marketing"  | area=="Organizational Behavior and Human Resource Management"  | area=="Strategy and Management"  | area=="Tourism, Leisure and Hospitality Management" 
+				*Sacamos aquellos que fueron creados por falta de datos*
+				drop if documents==0 & citabledocuments==. & citations==0
+				merge 1:1 country year area using "C:\Users\zequi\Desktop\ORT\Scimago\Mapas\dta/base_final_para comparar.dta"
+				drop _merge
+				pwcorr documents documents_zequi	
+			
+		/*
+		Conclusiones:
+		-Respecto al merge:
+		Hay 62 observaciones que en la base de Matilde  están que en esta 
+		base ("base_final_para comparar.dta") no. No  hay algo en común entre estas 62 
+		observaciones.
+		Después sucede que del en la base de Matilde hay 2837 observaciones que son ceros 
+		(tanto documents como citations) de las que si se cuentan datos en la base de 
+		este archivo ("base_final_para comparar.dta"). Pero 2663 de esas observaciones 
+		pertenecen al área "Business and International Management"
+
+		- Respecto a la diferencia en cantidad de documentos y citas:
+		Hay 23414 observaciones (de 27530, es decir, no se consideran las observaciones
+		creadas y que son 0) en las que hay diferencias en la cantidad de documento
+		y/o cantidad de citas
+		Gran parte de la diferencia en cantidad de documentos correpsonde a 2019
+		(1022 observaciones de un total de 8381 con dif_docs distinto de cero)
+		Salvo en 2001 y 2008, la diferencia en el número de citas aumenta con el correr
+		de los años, lo cual es lógico.
+		*/
+		
+*B-CON TODAS LAS ÁREAS*
+	*1- Se crea la base*
+		*Se hace para todas las áreas menos; Economía, Finanzas,Business, Management and Accounting (ya se había hecho previamente)*
+			clear
+			foreach j in Transportation UrbanStudies Urology VeterinaryMiscella Virology VisArtPerfArt WasteManDisp WaterSciTech Accounting AcoustUltra AdvSpecNurs AeroEng Aging AgriBioSciMiscella AgroCropSci AlgNumTheo AnalChem Analysis Anatomy AnestPainMed AnimSciZoo Anthropology AppMath AppMicroBiotech AppPsy AquaSci Arch Archeology ArcheologyArtsHum ArtInt ArtsHumanMiscella AssessDiagn AstronAstrophy AtmoSci AtomMolecPhyOpt AutoEng BehavNeurosci BiochemGenMolBioMiscella Biochemistry BiochemMed Bioeng Biomaterials BiomedEng Biophysics BioPsy Biotechnology BuildConstr BusIntMan BusManAccMiscella CancerResearch CardioCardioMed CarePlanning Catalysis CellBiology CellMolecNeurosci CerComp ChemEngMiscella ChemHealthSaf ChemMiscella Chiropractics CivilStructEng Classics ClinicBiochem ClinicPsy CognNeurosci ColloidSurfaceChem ComGraphComAidDes CommHomeCare Communication CompEarthSci ComplAltMed ComplManualTher CompMath CompMech CompNetComm CompSciApp CompSciMiscella CompTheoMath CompVisPattRec CondMattPhy Conservation ContOpt ContSystEng CritCareIntensCareMed CritCareNurs CulturalStudies DecSciMiscella Demography DentMiscella Dermatology DevelBio DevelNeurosci DevelopEducPsy Development DiscrMathComb DrugDiscovery DrugGuides EarthPlanetSciMiscella EartHSurfProc EcoEvolBehavSyst EcoGeo Ecology EcoMod EconEconometFinMiscella EconomicsEconometrics Education Elearning ElectElectroEng ElectOptMagnMat Electrochemistry Embryology EmerMed EmerNurs EndoAutoSyst EndocrDiabMet Endocrinology EnerEngPowTech EnerMiscella EngMiscella EnvChem EnvEng EnvSciMiscella Epidemiology Equine ExpCognPsy FamPrac FiltSep Finance FluFloTransfProc FoodAnimals FoodSci Forestry FuelTech FundSkills Gastroenterology GenderStudies Genetics GeneticsClinical GeochemPetro Geology GeomTopo Geophysics GeoPlanDevelop GeotechEngEngGeo GeriatGeron Gerontology GlobPlanChang HardArch HealthInfMan HealthInfor HealthPolicy HealthProfMiscella HealthSocSci HealthToxiMuta Hematology Hepatology Histology History HistPhiloSci Horticulture HumCompInter HumFactErgon ImmuMicrobioMiscella ImmunAller Immunology IndManEng IndRel InfectDis InfSys InfSysMan InorgChem InsectSci Instrumentation InternMed IssEthLegAsp LangLing Law LeadMan LibInfSci LifespanLifecourseStud LingLang LitLitTheo Logic LPNLVN ManInfSyst ManMonitPolLaw ManSciOpRes ManTechInn Marketing MatChem MathMiscella MathPhy MatMidw MatSciMiscella MechEng MechMat MediaTech MedicLabTech MedMiscella MedSurgNurs MetAlloys Microbiology MicrobioMed ModelSim MolecBio MolecMed Multidisciplinary Museology Music NanosciNanotech NatLandConserv Nephrology NeuroClinical Neurology NeuropsyPhysiolPsy NeurosciMiscella NucEnerEng NuclHighEnergPhys NumAnal NursMiscella NutriDiet ObstetGynec OccupTher OceanEng Oceanography Oncology OncoNurs Ophthalmology Optometry OralSurg OrgBehHRMan OrgChem Orthodontics OrthoSportsMed Otorhinolaryngology Paleontology Parasitology PathoForensMed PediatPerinatChildHealth Pediatrics Periodontics Pharmacology PharmacToxPharmaMiscella Pharmacy PharmaMedical PharmaNurs PharmaSci Philosophy PhysAstroMiscella Physiology PhysioMedical PhysTheoChem PhysTherSpTherRehab PlantSci Podiatry PolitSciInterRel Pollution PolymPlastics ProcChemTech PsychiaMentHealth PsyMentHeal PsyMiscella PubAdmin PubHealthEnvirOccupHealth PulmonRespMed Radiation RadioNuclMedImag RadioUltraTech Rehabilitation ReligiousStudies RenewEnerSustEnv ReprodMed ResTheo RevExPrep Rheumatology SafetyResearch SafRiskReliaQual SenSyst SigProc SmallAnimals SocialWork SocioPolSci SocPsy SocSciMiscella Software SoilSci SpacePlanetSci Spectroscopy SpeechHearing SportsSci StatNonlinPhys StatProb StatProbUncer Stratigraphy StratMan StructBio SurfCoatFilms SurfInterf Surgery TheoCompSci TourLeisHospMan Toxicology Transplantation{
+				foreach i in 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020{
+					import excel "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.xlsx", sheet("Sheet1") firstrow clear
+					gen	year=`i'
+					gen area="`j'"
+					rename *, lower
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta", replace
+				}
+				
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank 1996.dta", clear
+				save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+
+					
+				foreach i in 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020{
+					use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", clear
+					append using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta"
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+				}
+				}
+
+	*Las siguientes áreas no cuentan con todos los años por lo que se hacen loops para cada una*
+		
+		*__DentAssist	
+			foreach j in __DentAssist{
+				foreach i in 2007 2008 2009 2010 2011 2012 {
+					import excel "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.xlsx", sheet("Sheet1") firstrow clear
+					gen	year=`i'
+					gen area="`j'"
+					rename *, lower
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta", replace
+				}
+				
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank 2007.dta", clear
+				save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+
+					
+				foreach i in 2008 2009 2010 2011 2012 {
+					use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", clear
+					append using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta"
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+				}
+				}
+				
+		*__DentHyg
+					foreach j in __DentHyg{
+				foreach i in 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014  2016 2017 2018 2019 2020{
+					import excel "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.xlsx", sheet("Sheet1") firstrow clear
+					gen	year=`i'
+					gen area="`j'"
+					rename *, lower
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta", replace
+				}
+				
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank 2003.dta", clear
+				save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+
+					
+				foreach i in 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014  2016 2017 2018 2019 2020{
+					use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", clear
+					append using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta"
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+				}
+				}
+				
+		*__EmerMedServ
+					foreach j in __EmerMedServ{
+				foreach i in 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020{
+					import excel "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.xlsx", sheet("Sheet1") firstrow clear
+					gen	year=`i'
+					gen area="`j'"
+					rename *, lower
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta", replace
+				}
+				
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank 1998.dta", clear
+				save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+
+					
+				foreach i in 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020{
+					use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", clear
+					append using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta"
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+				}
+				}
+		*__MedicAssistTrans
+					foreach j in __MedicAssistTrans{
+				foreach i in 1997 1998 1999 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020{
+					import excel "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.xlsx", sheet("Sheet1") firstrow clear
+					gen	year=`i'
+					gen area="`j'"
+					rename *, lower
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta", replace
+				}
+				
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank 1997.dta", clear
+				save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+
+					
+				foreach i in  1998 1999 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020{
+					use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", clear
+					append using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta"
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+				}
+				}	
+		*__MedicTerm
+					foreach j in __MedicTerm{
+				foreach i in 1996 1997 1998 1999 2004 2005 2006 2007 2008 2009  2016 2017 2018 2019 2020{
+					import excel "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.xlsx", sheet("Sheet1") firstrow clear
+					gen	year=`i'
+					gen area="`j'"
+					rename *, lower
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta", replace
+				}
+				
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank 1996.dta", clear
+				save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+
+					
+				foreach i in 1997 1998 1999 2004 2005 2006 2007 2008 2009 2016 2017 2018 2019 2020{
+					use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", clear
+					append using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta"
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+				}
+				}
+		*__NurseAssist
+					foreach j in __NurseAssist{
+				foreach i in  1997  1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020{
+					import excel "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.xlsx", sheet("Sheet1") firstrow clear
+					gen	year=`i'
+					gen area="`j'"
+					rename *, lower
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta", replace
+				}
+				
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank 1997.dta", clear
+				save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+
+					
+				foreach i in  1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020{
+					use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", clear
+					append using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta"
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+				}
+				}
+		*__RespCare
+					foreach j in __RespCare{
+				foreach i in 2011 2012 2013 2015 2016 2017 2018 {
+					import excel "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.xlsx", sheet("Sheet1") firstrow clear
+					gen	year=`i'
+					gen area="`j'"
+					rename *, lower
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta", replace
+				}
+				
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank 2011.dta", clear
+				save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+
+					
+				foreach i in 2012 2013 2015 2016 2017 2018 {
+					use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", clear
+					append using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta"
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+				}
+				}		
+		*__RevRefMed
+					foreach j in __RevRefMed{
+				foreach i in 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2020{
+					import excel "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.xlsx", sheet("Sheet1") firstrow clear
+					gen	year=`i'
+					gen area="`j'"
+					rename *, lower
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta", replace
+				}
+				
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank 2005.dta", clear
+				save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+
+					
+				foreach i in  2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2020{
+					use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", clear
+					append using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas/`j'/scimagojr country rank `i'.dta"
+					save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta", replace
+				}
+				}	
+			
+			*Creamos el archivo final, en el que contamos con la información de todos
+			*los años y todas las áreas
+				clear
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_Accounting.dta", clear
+				save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta", replace
+				
+				*Append a todas las áreas*
+				foreach j in  AcoustUltra AdvSpecNurs AeroEng Aging AgriBioSciMiscella AgroCropSci AlgNumTheo AnalChem Analysis Anatomy AnestPainMed AnimSciZoo Anthropology AppMath AppMicroBiotech AppPsy AquaSci Arch Archeology ArcheologyArtsHum ArtInt ArtsHumanMiscella AssessDiagn AstronAstrophy AtmoSci AtomMolecPhyOpt AutoEng BehavNeurosci BiochemGenMolBioMiscella Biochemistry BiochemMed Bioeng Biomaterials BiomedEng Biophysics BioPsy Biotechnology BuildConstr BusIntMan BusManAccMiscella CancerResearch CardioCardioMed CarePlanning Catalysis CellBiology CellMolecNeurosci CerComp ChemEngMiscella ChemHealthSaf ChemMiscella Chiropractics CivilStructEng Classics ClinicBiochem ClinicPsy CognNeurosci ColloidSurfaceChem ComGraphComAidDes CommHomeCare Communication CompEarthSci ComplAltMed ComplManualTher CompMath CompMech CompNetComm CompSciApp CompSciMiscella CompTheoMath CompVisPattRec CondMattPhy Conservation ContOpt ContSystEng CritCareIntensCareMed CritCareNurs CulturalStudies DecSciMiscella Demography __DentAssist __DentHyg DentMiscella Dermatology DevelBio DevelNeurosci DevelopEducPsy Development DiscrMathComb DrugDiscovery DrugGuides EarthPlanetSciMiscella EartHSurfProc EcoEvolBehavSyst EcoGeo Ecology EcoMod EconEconometFinMiscella EconomicsEconometrics Education Elearning ElectElectroEng ElectOptMagnMat Electrochemistry Embryology EmerMed __EmerMedServ EmerNurs EndoAutoSyst EndocrDiabMet Endocrinology EnerEngPowTech EnerMiscella EngMiscella EnvChem EnvEng EnvSciMiscella Epidemiology Equine ExpCognPsy FamPrac FiltSep Finance FluFloTransfProc FoodAnimals FoodSci Forestry FuelTech FundSkills Gastroenterology GenderStudies Genetics GeneticsClinical GeochemPetro Geology GeomTopo Geophysics GeoPlanDevelop GeotechEngEngGeo GeriatGeron Gerontology GlobPlanChang HardArch HealthInfMan HealthInfor HealthPolicy HealthProfMiscella HealthSocSci HealthToxiMuta Hematology Hepatology Histology History HistPhiloSci Horticulture HumCompInter HumFactErgon ImmuMicrobioMiscella ImmunAller Immunology IndManEng IndRel InfectDis InfSys InfSysMan InorgChem InsectSci Instrumentation InternMed IssEthLegAsp LangLing Law LeadMan LibInfSci LifespanLifecourseStud LingLang LitLitTheo Logic LPNLVN ManInfSyst ManMonitPolLaw ManSciOpRes ManTechInn Marketing MatChem MathMiscella MathPhy MatMidw MatSciMiscella MechEng MechMat MediaTech __MedicAssistTrans MedicLabTech __MedicTerm MedMiscella MedSurgNurs MetAlloys Microbiology MicrobioMed ModelSim MolecBio MolecMed Multidisciplinary Museology Music NanosciNanotech NatLandConserv Nephrology NeuroClinical Neurology NeuropsyPhysiolPsy NeurosciMiscella NucEnerEng NuclHighEnergPhys NumAnal __NurseAssist NursMiscella NutriDiet ObstetGynec OccupTher OceanEng Oceanography Oncology OncoNurs Ophthalmology Optometry OralSurg OrgBehHRMan OrgChem Orthodontics OrthoSportsMed Otorhinolaryngology Paleontology Parasitology PathoForensMed PediatPerinatChildHealth Pediatrics Periodontics Pharmacology PharmacToxPharmaMiscella Pharmacy PharmaMedical PharmaNurs PharmaSci Philosophy PhysAstroMiscella Physiology PhysioMedical PhysTheoChem PhysTherSpTherRehab PlantSci Podiatry PolitSciInterRel Pollution PolymPlastics ProcChemTech PsychiaMentHealth PsyMentHeal PsyMiscella PubAdmin PubHealthEnvirOccupHealth PulmonRespMed Radiation RadioNuclMedImag RadioUltraTech Rehabilitation ReligiousStudies RenewEnerSustEnv ReprodMed __RespCare ResTheo RevExPrep __RevRefMed Rheumatology SafetyResearch SafRiskReliaQual SenSyst SigProc SmallAnimals SocialWork SocioPolSci SocPsy SocSciMiscella Software SoilSci SpacePlanetSci Spectroscopy SpeechHearing SportsSci StatNonlinPhys StatProb StatProbUncer Stratigraphy StratMan StructBio SurfCoatFilms SurfInterf Surgery TheoCompSci TourLeisHospMan Toxicology Transplantation Transportation UrbanStudies Urology VeterinaryMiscella Virology VisArtPerfArt WasteManDisp WaterSciTech {
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta", replace
+				append using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final_`j'.dta"
+				save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta", replace
+				}
+
+			*Reemplazamos los nombres de las áreas
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta", clear
+				replace area="Accounting" if area=="Accounting"
+				replace area="Acoustics and Ultrasonics" if area=="AcoustUltra"
+				replace area="Advanced and Specialized Nursing" if area=="AdvSpecNurs"
+				replace area="Aerospace Engineering" if area=="AeroEng"
+				replace area="Aging" if area=="Aging"
+				replace area="Agricultural and Biological Sciences (miscellaneous)" if area=="AgriBioSciMiscella"
+				replace area="Agronomy and Crop Science" if area=="AgroCropSci"
+				replace area="Algebra and Number Theory" if area=="AlgNumTheo"
+				replace area="Analytical Chemistry" if area=="AnalChem"
+				replace area="Analysis" if area=="Analysis"
+				replace area="Anatomy" if area=="Anatomy"
+				replace area="Anesthesiology and Pain Medicine" if area=="AnestPainMed"
+				replace area="Animal Science and Zoology" if area=="AnimSciZoo"
+				replace area="Anthropology" if area=="Anthropology"
+				replace area="Applied Mathematics" if area=="AppMath"
+				replace area="Applied Microbiology and Biotechnology" if area=="AppMicroBiotech"
+				replace area="Applied Psychology" if area=="AppPsy"
+				replace area="Aquatic Science" if area=="AquaSci"
+				replace area="Architecture" if area=="Arch"
+				replace area="Archeology" if area=="Archeology"
+				replace area="Archeology (arts and humanities)" if area=="ArcheologyArtsHum"
+				replace area="Artificial Intelligence" if area=="ArtInt"
+				replace area="Arts and Humanities (miscellaneous)" if area=="ArtsHumanMiscella"
+				replace area="Assessment and Diagnosis" if area=="AssessDiagn"
+				replace area="Astronomy and Astrophysics" if area=="AstronAstrophy"
+				replace area="Atmospheric Science" if area=="AtmoSci"
+				replace area="Atomic and Molecular Physics, and Optics" if area=="AtomMolecPhyOpt"
+				replace area="Automotive Engineering" if area=="AutoEng"
+				replace area="Behavioral Neuroscience" if area=="BehavNeurosci"
+				replace area="Biochemistry, Genetics and Molecular Biology (miscellaneous)" if area=="BiochemGenMolBioMiscella"
+				replace area="Biochemistry" if area=="Biochemistry"
+				replace area="Biochemistry (medical)" if area=="BiochemMed"
+				replace area="Bioengineering" if area=="Bioeng"
+				replace area="Biomaterials" if area=="Biomaterials"
+				replace area="Biomedical Engineering" if area=="BiomedEng"
+				replace area="Biophysics" if area=="Biophysics"
+				replace area="Biological Psychiatry" if area=="BioPsy"
+				replace area="Biotechnology" if area=="Biotechnology"
+				replace area="Building and Construction" if area=="BuildConstr"
+				replace area="Business and International Management" if area=="BusIntMan"
+				replace area="Business, Management and Accounting (miscellaneous)" if area=="BusManAccMiscella"
+				replace area="Cancer Research" if area=="CancerResearch"
+				replace area="Cardiology and Cardiovascular Medicine" if area=="CardioCardioMed"
+				replace area="Care Planning" if area=="CarePlanning"
+				replace area="Catalysis" if area=="Catalysis"
+				replace area="Cell Biology" if area=="CellBiology"
+				replace area="Cellular and Molecular Neuroscience" if area=="CellMolecNeurosci"
+				replace area="Ceramics and Composites" if area=="CerComp"
+				replace area="Chemical Engineering (miscellaneous)" if area=="ChemEngMiscella"
+				replace area="Chemical Health and Safety" if area=="ChemHealthSaf"
+				replace area="Chemistry (miscellaneous)" if area=="ChemMiscella"
+				replace area="Chiropractics" if area=="Chiropractics"
+				replace area="Civil and Structural Engineering" if area=="CivilStructEng"
+				replace area="Classics" if area=="Classics"
+				replace area="Clinical Biochemistry" if area=="ClinicBiochem"
+				replace area="Clinical Psychology" if area=="ClinicPsy"
+				replace area="Cognitive Neuroscience" if area=="CognNeurosci"
+				replace area="Colloid and Surface Chemistry" if area=="ColloidSurfaceChem"
+				replace area="Computer Graphics and Computer-Aided Design" if area=="ComGraphComAidDes"
+				replace area="Community and Home Care" if area=="CommHomeCare"
+				replace area="Communication" if area=="Communication"
+				replace area="Computers in Earth Sciences" if area=="CompEarthSci"
+				replace area="Complementary and Alternative Medicine" if area=="ComplAltMed"
+				replace area="Complementary and Manual Therapy" if area=="ComplManualTher"
+				replace area="Computational Mathematics" if area=="CompMath"
+				replace area="Computational Mechanics" if area=="CompMech"
+				replace area="Computer Networks and Communications" if area=="CompNetComm"
+				replace area="Computer Science Applications" if area=="CompSciApp"
+				replace area="Computer Science (miscellaneous)" if area=="CompSciMiscella"
+				replace area="Computational Theory and Mathematics" if area=="CompTheoMath"
+				replace area="Computer Vision and Pattern Recognition" if area=="CompVisPattRec"
+				replace area="Condensed Matter Physics" if area=="CondMattPhy"
+				replace area="Conservation" if area=="Conservation"
+				replace area="Control and Optimization" if area=="ContOpt"
+				replace area="Control and Systems Engineering" if area=="ContSystEng"
+				replace area="Critical Care and Intensive Care Medicine" if area=="CritCareIntensCareMed"
+				replace area="Critical Care Nursing" if area=="CritCareNurs"
+				replace area="Cultural Studies" if area=="CulturalStudies"
+				replace area="Decision Sciences (miscellaneous)" if area=="DecSciMiscella"
+				replace area="Demography" if area=="Demography"
+				replace area="Dental Assisting" if area=="__DentAssist"
+				replace area="Dental Hygiene" if area=="__DentHyg"
+				replace area="Dentistry (miscellaneous)" if area=="DentMiscella"
+				replace area="Dermatology" if area=="Dermatology"
+				replace area="Developmental Biology" if area=="DevelBio"
+				replace area="Developmental Neuroscience" if area=="DevelNeurosci"
+				replace area="Developmental and Educational Psychology" if area=="DevelopEducPsy"
+				replace area="Development" if area=="Development"
+				replace area="Discrete Mathematics and Combinatorics" if area=="DiscrMathComb"
+				replace area="Drug Discovery" if area=="DrugDiscovery"
+				replace area="Drug Guides" if area=="DrugGuides"
+				replace area="Earth and Planetary Sciences (miscellaneous)" if area=="EarthPlanetSciMiscella"
+				replace area="Earth-Surface Processes" if area=="EartHSurfProc"
+				replace area="Ecology, Evolution, Behavior and Systematics" if area=="EcoEvolBehavSyst"
+				replace area="Economic Geology" if area=="EcoGeo"
+				replace area="Ecology" if area=="Ecology"
+				replace area="Ecological Modeling" if area=="EcoMod"
+				replace area="Economics, Econometrics and Finance (miscellaneous)" if area=="EconEconometFinMiscella"
+				replace area="Economics and Econometrics" if area=="EconomicsEconometrics"
+				replace area="Education" if area=="Education"
+				replace area="Elearning" if area=="Elearning"
+				replace area="Electrical and Electronic Engineering" if area=="ElectElectroEng"
+				replace area="Electronic, Optical and Magnetic Materials" if area=="ElectOptMagnMat"
+				replace area="Electrochemistry" if area=="Electrochemistry"
+				replace area="Embryology" if area=="Embryology"
+				replace area="Emergency Medicine" if area=="EmerMed"
+				replace area="Emergency Medical Services" if area=="__EmerMedServ"
+				replace area="Emergency Nursing" if area=="EmerNurs"
+				replace area="Endocrine and Autonomic Systems" if area=="EndoAutoSyst"
+				replace area="Endocrinology, Diabetes and Metabolism" if area=="EndocrDiabMet"
+				replace area="Endocrinology" if area=="Endocrinology"
+				replace area="Energy Engineering and Power Technology" if area=="EnerEngPowTech"
+				replace area="Energy (miscellaneous)" if area=="EnerMiscella"
+				replace area="Engineering (miscellaneous)" if area=="EngMiscella"
+				replace area="Environmental Chemistry" if area=="EnvChem"
+				replace area="Environmental Engineering" if area=="EnvEng"
+				replace area="Environmental Science (miscellaneous)" if area=="EnvSciMiscella"
+				replace area="Epidemiology" if area=="Epidemiology"
+				replace area="Equine" if area=="Equine"
+				replace area="Experimental and Cognitive Psychology" if area=="ExpCognPsy"
+				replace area="Family Practice" if area=="FamPrac"
+				replace area="Filtration and Separation" if area=="FiltSep"
+				replace area="Finance" if area=="Finance"
+				replace area="Fluid Flow and Transfer Processes" if area=="FluFloTransfProc"
+				replace area="Food Animals" if area=="FoodAnimals"
+				replace area="Food Science" if area=="FoodSci"
+				replace area="Forestry" if area=="Forestry"
+				replace area="Fuel Technology" if area=="FuelTech"
+				replace area="Fundamentals and Skills" if area=="FundSkills"
+				replace area="Gastroenterology" if area=="Gastroenterology"
+				replace area="Gender Studies" if area=="GenderStudies"
+				replace area="Genetics" if area=="Genetics"
+				replace area="Genetics (clinical)" if area=="GeneticsClinical"
+				replace area="Geochemistry and Petrology" if area=="GeochemPetro"
+				replace area="Geology" if area=="Geology"
+				replace area="Geometry and Topology" if area=="GeomTopo"
+				replace area="Geophysics" if area=="Geophysics"
+				replace area="Geography, Planning and Development" if area=="GeoPlanDevelop"
+				replace area="Geotechnical Engineering and Engineering Geology" if area=="GeotechEngEngGeo"
+				replace area="Geriatrics and Gerontology" if area=="GeriatGeron"
+				replace area="Gerontology" if area=="Gerontology"
+				replace area="Global and Planetary Change" if area=="GlobPlanChang"
+				replace area="Hardware and Architecture" if area=="HardArch"
+				replace area="Health Information Management" if area=="HealthInfMan"
+				replace area="Health Informatics" if area=="HealthInfor"
+				replace area="Health Policy" if area=="HealthPolicy"
+				replace area="Health Professions (miscellaneous)" if area=="HealthProfMiscella"
+				replace area="Health (social science)" if area=="HealthSocSci"
+				replace area="Health, Toxicology and Mutagenesis" if area=="HealthToxiMuta"
+				replace area="Hematology" if area=="Hematology"
+				replace area="Hepatology" if area=="Hepatology"
+				replace area="Histology" if area=="Histology"
+				replace area="History" if area=="History"
+				replace area="History and Philosophy of Science" if area=="HistPhiloSci"
+				replace area="Horticulture" if area=="Horticulture"
+				replace area="Human-Computer Interaction" if area=="HumCompInter"
+				replace area="Human Factors and Ergonomics" if area=="HumFactErgon"
+				replace area="Immunology and Microbiology (miscellaneous)" if area=="ImmuMicrobioMiscella"
+				replace area="Immunology and Allergy" if area=="ImmunAller"
+				replace area="Immunology" if area=="Immunology"
+				replace area="Industrial and Manufacturing Engineering" if area=="IndManEng"
+				replace area="Industrial Relations" if area=="IndRel"
+				replace area="Infectious Diseases" if area=="InfectDis"
+				replace area="Information Systems" if area=="InfSys"
+				replace area="Information Systems and Management" if area=="InfSysMan"
+				replace area="Inorganic Chemistry" if area=="InorgChem"
+				replace area="Insect Science" if area=="InsectSci"
+				replace area="Instrumentation" if area=="Instrumentation"
+				replace area="Internal Medicine" if area=="InternMed"
+				replace area="Issues, Ethics and Legal Aspects" if area=="IssEthLegAsp"
+				replace area="Language and Linguistics" if area=="LangLing"
+				replace area="Law" if area=="Law"
+				replace area="Leadership and Management" if area=="LeadMan"
+				replace area="Library and Information Sciences" if area=="LibInfSci"
+				replace area="Life-span and Life-course Studies" if area=="LifespanLifecourseStud"
+				replace area="Linguistics and Language" if area=="LingLang"
+				replace area="Literature and Literary Theory" if area=="LitLitTheo"
+				replace area="Logic" if area=="Logic"
+				replace area="LPN and LVN" if area=="LPNLVN"
+				replace area="Management Information Systems" if area=="ManInfSyst"
+				replace area="Management, Monitoring, Policy and Law" if area=="ManMonitPolLaw"
+				replace area="Management Science and Operations Research" if area=="ManSciOpRes"
+				replace area="Management of Technology and Innovation" if area=="ManTechInn"
+				replace area="Marketing" if area=="Marketing"
+				replace area="Materials Chemistry" if area=="MatChem"
+				replace area="Mathematics (miscellaneous)" if area=="MathMiscella"
+				replace area="Mathematical Physics" if area=="MathPhy"
+				replace area="Maternity and Midwifery" if area=="MatMidw"
+				replace area="Materials Science (miscellaneous)" if area=="MatSciMiscella"
+				replace area="Mechanical Engineering" if area=="MechEng"
+				replace area="Mechanics of Materials" if area=="MechMat"
+				replace area="Media Technology" if area=="MediaTech"
+				replace area="Medical Assisting and Transcription" if area=="__MedicAssistTrans"
+				replace area="Medical Laboratory Technology" if area=="MedicLabTech"
+				replace area="Medical Terminology" if area=="__MedicTerm"
+				replace area="Medicine (miscellaneous)" if area=="MedMiscella"
+				replace area="Medical and Surgical Nursing" if area=="MedSurgNurs"
+				replace area="Metals and Alloys" if area=="MetAlloys"
+				replace area="Microbiology" if area=="Microbiology"
+				replace area="Microbiology (medical)" if area=="MicrobioMed"
+				replace area="Modeling and Simulation" if area=="ModelSim"
+				replace area="Molecular Biology" if area=="MolecBio"
+				replace area="Molecular Medicine" if area=="MolecMed"
+				replace area="Multidisciplinary" if area=="Multidisciplinary"
+				replace area="Museology" if area=="Museology"
+				replace area="Music" if area=="Music"
+				replace area="NanosciNanotech" if area=="NanosciNanotech"
+				replace area="Nature and Landscape Conservation" if area=="NatLandConserv"
+				replace area="Nephrology" if area=="Nephrology"
+				replace area="Neurology (clinical)" if area=="NeuroClinical"
+				replace area="Neurology" if area=="Neurology"
+				replace area="Neuropsychology and Physiological Psychology" if area=="NeuropsyPhysiolPsy"
+				replace area="Neuroscience (miscellaneous)" if area=="NeurosciMiscella"
+				replace area="Nuclear Energy and Engineering" if area=="NucEnerEng"
+				replace area="Nuclear and High Energy Physics" if area=="NuclHighEnergPhys"
+				replace area="Numerical Analysis" if area=="NumAnal"
+				replace area="Nurse Assisting" if area=="__NurseAssist"
+				replace area="Nursing (miscellaneous)" if area=="NursMiscella"
+				replace area="Nutrition and Dietetics" if area=="NutriDiet"
+				replace area="Obstetrics and Gynecology" if area=="ObstetGynec"
+				replace area="Occupational Therapy" if area=="OccupTher"
+				replace area="Ocean Engineering" if area=="OceanEng"
+				replace area="Oceanography" if area=="Oceanography"
+				replace area="Oncology" if area=="Oncology"
+				replace area="Oncology (nursing)" if area=="OncoNurs"
+				replace area="Ophthalmology" if area=="Ophthalmology"
+				replace area="Optometry" if area=="Optometry"
+				replace area="Oral Surgery" if area=="OralSurg"
+				replace area="Organizational Behavior and Human Resource Management" if area=="OrgBehHRMan"
+				replace area="Organic Chemistry" if area=="OrgChem"
+				replace area="Orthodontics" if area=="Orthodontics"
+				replace area="Orthopedics and Sports Medicine" if area=="OrthoSportsMed"
+				replace area="Otorhinolaryngology" if area=="Otorhinolaryngology"
+				replace area="Paleontology" if area=="Paleontology"
+				replace area="Parasitology" if area=="Parasitology"
+				replace area="Pathology and Forensic Medicine" if area=="PathoForensMed"
+				replace area="Pediatrics, Perinatology and Child Health" if area=="PediatPerinatChildHealth"
+				replace area="Pediatrics" if area=="Pediatrics"
+				replace area="Periodontics" if area=="Periodontics"
+				replace area="Pharmacology" if area=="Pharmacology"
+				replace area="Pharmacology, Toxicology and Pharmaceutics (miscellaneous)" if area=="PharmacToxPharmaMiscella"
+				replace area="Pharmacy" if area=="Pharmacy"
+				replace area="Pharmacology (medical)" if area=="PharmaMedical"
+				replace area="Pharmacology (nursing)" if area=="PharmaNurs"
+				replace area="Pharmaceutical Science" if area=="PharmaSci"
+				replace area="Philosophy" if area=="Philosophy"
+				replace area="Physics and Astronomy (miscellaneous)" if area=="PhysAstroMiscella"
+				replace area="Physiology" if area=="Physiology"
+				replace area="Physiology (medical)" if area=="PhysioMedical"
+				replace area="Physical and Theoretical Chemistry" if area=="PhysTheoChem"
+				replace area="Physical Therapy, Sports Therapy and Rehabilitation" if area=="PhysTherSpTherRehab"
+				replace area="Plant Science" if area=="PlantSci"
+				replace area="Podiatry" if area=="Podiatry"
+				replace area="Political Science and International Relations" if area=="PolitSciInterRel"
+				replace area="Pollution" if area=="Pollution"
+				replace area="Polymers and Plastics" if area=="PolymPlastics"
+				replace area="Process Chemistry and Technology" if area=="ProcChemTech"
+				replace area="Psychiatric Mental Health" if area=="PsychiaMentHealth"
+				replace area="Psychiatry and Mental Health" if area=="PsyMentHeal"
+				replace area="Psychology (miscellaneous)" if area=="PsyMiscella"
+				replace area="Public Administration" if area=="PubAdmin"
+				replace area="Public Health, Environmental and Occupational Health" if area=="PubHealthEnvirOccupHealth"
+				replace area="Pulmonary and Respiratory Medicine" if area=="PulmonRespMed"
+				replace area="Radiation" if area=="Radiation"
+				replace area="Radiology, Nuclear Medicine and Imaging" if area=="RadioNuclMedImag"
+				replace area="Radiological and Ultrasound Technology" if area=="RadioUltraTech"
+				replace area="Rehabilitation" if area=="Rehabilitation"
+				replace area="Religious Studies" if area=="ReligiousStudies"
+				replace area="Renewable Energy, Sustainability and the Environment" if area=="RenewEnerSustEnv"
+				replace area="Reproductive Medicine" if area=="ReprodMed"
+				replace area="Respiratory Care" if area=="__RespCare"
+				replace area="Research and Theory" if area=="ResTheo"
+				replace area="Review and Exam Preparation" if area=="RevExPrep"
+				replace area="Reviews and References (medical)" if area=="__RevRefMed"
+				replace area="Rheumatology" if area=="Rheumatology"
+				replace area="Safety Research" if area=="SafetyResearch"
+				replace area="Safety, Risk, Reliability and Quality" if area=="SafRiskReliaQual"
+				replace area="Sensory Systems" if area=="SenSyst"
+				replace area="Signal Processing" if area=="SigProc"
+				replace area="Small Animals" if area=="SmallAnimals"
+				replace area="SocialWork" if area=="SocialWork"
+				replace area="Sociology and Political Science" if area=="SocioPolSci"
+				replace area="Social Psychology" if area=="SocPsy"
+				replace area="Social Sciences (miscellaneous)" if area=="SocSciMiscella"
+				replace area="Software" if area=="Software"
+				replace area="Soil Science" if area=="SoilSci"
+				replace area="Space and Planetary Science" if area=="SpacePlanetSci"
+				replace area="Spectroscopy" if area=="Spectroscopy"
+				replace area="Speech and Hearing" if area=="SpeechHearing"
+				replace area="SportsSci" if area=="SportsSci"
+				replace area="Statistical and Nonlinear Physics" if area=="StatNonlinPhys"
+				replace area="Statistics and Probability" if area=="StatProb"
+				replace area="Statistics, Probability and Uncertainty" if area=="StatProbUncer"
+				replace area="Stratigraphy" if area=="Stratigraphy"
+				replace area="Strategy and Management" if area=="StratMan"
+				replace area="Structural Biology" if area=="StructBio"
+				replace area="Surfaces, Coatings and Films" if area=="SurfCoatFilms"
+				replace area="Surfaces and Interfaces" if area=="SurfInterf"
+				replace area="Surgery" if area=="Surgery"
+				replace area="Theoretical Computer Science" if area=="TheoCompSci"
+				replace area="Tourism, Leisure and Hospitality Management" if area=="TourLeisHospMan"
+				replace area="Toxicology" if area=="Toxicology"
+				replace area="Transplantation" if area=="Transplantation"
+				replace area="Transportation" if area=="Transportation"
+				replace area="Urban Studies" if area=="UrbanStudies"
+				replace area="Urology" if area=="Urology"
+				replace area="Veterinary (miscellaneous)" if area=="VeterinaryMiscella"
+				replace area="Virology" if area=="Virology"
+				replace area="Visual Arts and Performing Arts" if area=="VisArtPerfArt"
+				replace area="Waste Management and Disposal" if area=="WasteManDisp"
+				replace area="Water Science and Technology" if area=="WaterSciTech"
+				save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta", replace
+
+				*Verificamos que estén todos los años en todas las subcategorías*		
+				clear
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta"
+				keep area year
+				duplicates drop
+				gen cant_anios = 1 if year==1996
+				replace cant_anios = 1 if year==1997
+				replace cant_anios = 1 if year==1998
+				replace cant_anios = 1 if year==1999
+				replace cant_anios = 1 if year==2000
+				replace cant_anios = 1 if year==2000
+				replace cant_anios = 1 if year==2000
+				replace cant_anios = 1 if year==2001
+				replace cant_anios = 1 if year==2002
+				replace cant_anios = 1 if year==2003
+				replace cant_anios = 1 if year==2004
+				replace cant_anios = 1 if year==2005
+				replace cant_anios = 1 if year==2006
+				replace cant_anios = 1 if year==2007
+				replace cant_anios = 1 if year==2008
+				replace cant_anios = 1 if year==2009
+				replace cant_anios = 1 if year==2010
+				replace cant_anios = 1 if year==2011
+				replace cant_anios = 1 if year==2012
+				replace cant_anios = 1 if year==2013
+				replace cant_anios = 1 if year==2014
+				replace cant_anios = 1 if year==2015
+				replace cant_anios = 1 if year==2016
+				replace cant_anios = 1 if year==2017
+				replace cant_anios = 1 if year==2018
+				replace cant_anios = 1 if year==2019
+				replace cant_anios = 1 if year==2020
+				sort area
+				by area: replace cant_anios = sum(cant_anios)
+				by area: egen max_cant_anios = max(cant_anios) /*Vemos que hay 8 areas en las que max_cant_anios es menor a 25 y son las {areas que están nombradas con __ en las carpetas ubicadas en "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Areas"*/
+	
+	
+	*2- Se procede a asegurar que en todos los años y áreas aparezcan todos los 
+	*	países.
+				clear
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta"
+				fillin country area year
+				replace documents=0 if _fillin==1
+				replace citations=0 if _fillin==1
+				drop _fillin
+				save "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta", replace
+
+			*Verificación*
+				clear
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta", clear
+				keep country year area
+				duplicates drop /*No hay duplicados*/
+				*Hay 311 áreas, 240 países y 25 años considerados*
+				tab country /*25*311=7775*/
+				tab year /*240-311=74640*/
+				tab area /*240*25=6000*/
+
+				clear
+				use "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta", clear
+				edit if citations==.
+				edit if documents==.
+				
+	*3-CORRELACIÓN ENTRE LA BASE CON LA DE MATILDE ("Panel_completo_areas.dta") Y 
+		*  LA DE ESTE ARCHIVO ("base_final_para comparar.dta")		
+				
+			*Correlación*
+				clear
+				cd "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Matilde"
+				use "Panel_completo_areas.dta",clear
+				rename *, lower
+				rename documents documents_matilde
+				*Sacamos aquellos que fueron creados por falta de datos*
+				drop if documents_matilde==0 & citabledocuments==. & citations==0
+				merge 1:1 country year area using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta"
+				pwcorr documents_matilde documents
+			
+			*Correlación con los que fueron creados por falta de datos*
+				clear
+				cd "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Matilde"
+				use "Panel_completo_areas.dta",clear
+				rename *, lower
+				rename documents documents_matilde				
+				merge 1:1 country year area using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta"
+				drop _merge
+				pwcorr documents_matilde documents	
+			
+			*Correlación solo con _merge==3*
+				clear
+				cd "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Matilde"
+				use "Panel_completo_areas.dta",clear
+				rename *, lower
+				rename documents documents_matilde
+				*Sacamos aquellos que fueron creados por falta de datos*
+				drop if documents_matilde==0 & citabledocuments==. & citations==0
+				merge 1:1 country year area using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta"
+				keep if _merge==3
+				pwcorr documents_matilde documents
+			
+			*Correlación con los que fueron creados por falta de datos y solo con _merge==3*
+				clear
+				cd "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\Matilde"
+				use "Panel_completo_areas.dta",clear
+				rename *, lower
+				rename documents documents_matilde				
+				merge 1:1 country year area using "C:\Users\yudka\Documents\Trabajo - Proyectos\Trabajo\Scimago\Mapas\dta/base_final.dta"
+				keep if _merge==3				
+				drop _merge
+				pwcorr documents_matilde documents	
+				
