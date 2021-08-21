@@ -1,3 +1,5 @@
+*This project consists of the creation of a database from Scimago's website.
+
 /*Primero se trabaja solo con algunas áreas de interés para probar el código
 y verficar que el procedimiento fuese correcto. Para comprobar que así sea se
 comparo la base con una realizada por Matilde Pereira Elola llamada 
