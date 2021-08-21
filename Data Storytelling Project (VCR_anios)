@@ -1,3 +1,7 @@
+*The script acts as a support to research about Uruguay's revealed comparative advantage in different areas of research. 
+*It studies the confidence interval considering the mean of research published between 2014 and 2018.
+
+
 *Generamos una base con el promedio de documentos por país entre 2014 y 2018. 
 *Se corre una única vez
 	*Se pasan las bases a .dta*	
