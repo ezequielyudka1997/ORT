@@ -1,3 +1,6 @@
+*This script was adapted from another one created by IECON (UDELAR) and my job was to adapt it to the requirements of the project. The goal is to clean a database provided 
+*by the Uruguayan's Tax Administration (DGI) to do research about the an enterprise tax called IRAE (Impuesto a las Rentas de las Actividades Económicas)
+
 drop _all
 cd "C:\Users\zequi\Desktop\ORT\IRAE\base_IRAE_IEcon"
 
