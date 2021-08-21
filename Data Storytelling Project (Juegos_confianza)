@@ -1,3 +1,6 @@
+*This was my first task at ORT University. Consequently, the code is quite simple. The goal was to study the level of confidence of Uruguayans in immigrants and the level 
+*of confidence of Uruguayans in co-nationals. Results where presented as a small research ("Interpersonal and institutional trust in Uruguay" co written with Nestor Gandelman)
+
 drop _all
 cd "C:\Users\yudka\Desktop\Bases"
 
