@@ -1,3 +1,6 @@
+*The script acts as a support to research about Uruguay's revealed comparative advantage in different areas of research. It studies the confidence interval according to 
+*different entry barriers (quantity of documents published according to Scimago)
+
 *CON INVERSIÓN*
 	*Se agarra el Excel, se lo importa y se lo guarda como .dta. Solo se hace una vez*
 	*import excel "C:\Users\zequi\Desktop\ORT\VCR UY investigación\datos_stata_inv_cant_docs.xlsx", sheet("Hoja 1") firstrow
